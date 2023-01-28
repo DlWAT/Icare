@@ -1,5 +1,5 @@
 import pysimpledmx
-mydmx = pysimpledmx.DMXConnection(3)
+mydmx = pysimpledmx.DMXConnection(8)
 
 mydmx.setChannel(1, 255) # set DMX channel 1 to full
 mydmx.setChannel(2, 128) # set DMX channel 2 to 128
