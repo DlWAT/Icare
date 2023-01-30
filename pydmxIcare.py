@@ -47,3 +47,15 @@ class DMX_Icare(object):
     def send_data(self):
         data_out = np.concatenate((self.start_byte, self.data, self.end_byte)).tobytes()
         self.com.write(data_out)
+
+
+class light_group(object):
+    def __init__(self,number_channel) -> None:
+        self.number_channel=0
+        self.group_data= np.zeros([number_channel], np.uint8)
+        
+
+    def addtogroup(self,lightsystem):
+        if self.number_channel != lightsystem.number_channel:
+            raise ValueError(" Number of channel must be the same !")
+        
