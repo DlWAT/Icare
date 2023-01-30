@@ -41,6 +41,8 @@ class DMX_Icare(object):
             raise ValueError(num_channel+" Must be less than 255")
         self.data[num_channel] = value
 
+    def set_data(self, data_in,index_addr,number_channel):
+        self.data[index_addr:index_addr+number_channel]=data_in
 
     def send_data(self):
         data_out = np.concatenate((self.start_byte, self.data, self.end_byte)).tobytes()
