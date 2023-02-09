@@ -3,11 +3,17 @@ import serial.tools.list_ports
 import serial, sys
 import numpy as np
 import warnings
-
+    
 
 class DMX_Icare(object):
+    """_summary_
 
+    Args:
+        object (_type_): _description_
+    """
     def __init__(self) -> None:
+        """_summary_
+        """
         self.start_byte = np.array([0x7E, 0x06, 0x01, 0x02, 0x00], np.uint8)
         self.end_byte = np.array([0xE7], np.uint8)
         num_of_channels=512
@@ -17,6 +23,7 @@ class DMX_Icare(object):
         
 
     def connection(self):
+        
         comlist = list(serial.tools.list_ports.comports())
         if not comlist:
             warnings.warn("No COM port available")
@@ -58,4 +65,4 @@ class light_group(object):
     def addtogroup(self,lightsystem):
         if self.number_channel != lightsystem.number_channel:
             raise ValueError(" Number of channel must be the same !")
-        
+
