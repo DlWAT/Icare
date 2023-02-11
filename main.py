@@ -16,4 +16,6 @@ print(mydmx.data[0:10])
 
 group1=pydmxIcare.light_group()
 
-group1.addtogroup(par_led1)
+group1.addtogroup(par_led1)  
+
+
