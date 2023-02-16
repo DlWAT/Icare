@@ -18,7 +18,7 @@ class Application(tk.Tk):
         self.mydmx.connection()
     def creer_widgets(self):
         self.enable=0
-        
+              
         list_group=[]
         sel=tk.StringVar()
         self.cb1 = ttk.Combobox(self, values=list_group,width=7,textvariable=sel)
@@ -98,6 +98,13 @@ class Application(tk.Tk):
 
 if __name__ == "__main__":
     app = Application()
+    
+    tabControl=ttk.Notebook(app)
+    tab1 = ttk.Frame(tabControl)
+    tab2 = ttk.Frame(tabControl)
+    tabControl.add(tab1, text='Tab 1')
+    tabControl.add(tab2, text='Tab 2') 
+    
     app.title("Icare")
     app.geometry("750x750")
     app.mainloop()
