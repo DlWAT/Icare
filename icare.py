@@ -9,9 +9,10 @@ class Application(tk.Tk):
         tabControl=ttk.Notebook(self)
         self.tab1 = ttk.Frame(tabControl)
         self.tab2 = ExperimentTab.ExperimentTab()
-        
-        tabControl.add(self.tab1, text='Tab 1')
-        tabControl.add(self.tab2, text='Tab 2') 
+        self.tab3 = ttk.Frame(tabControl)
+        tabControl.add(self.tab1, text='Home')
+        tabControl.add(self.tab2, text='Direct') 
+        tabControl.add(self.tab3, text='Sequence') 
         tabControl.pack(expand=1, fill="both")
         
 if __name__ == "__main__":

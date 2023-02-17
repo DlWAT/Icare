@@ -14,7 +14,7 @@ class ExperimentTab(ttk.Frame):
         self.creer_widgets()
         self.par_led1=pydmxlight.Par_Led_615_AFX(5,0)
         self.mydmx= pydmxIcare.DMX_Icare()
-        self.mydmx.connection()
+        
     def creer_widgets(self):
         self.enable=0
         self.enable_rand=0
@@ -66,9 +66,14 @@ class ExperimentTab(ttk.Frame):
         self.bouton_rand= tk.Button(self, text="Random", command = self.rand_light)
         self.bouton_rand.grid(column=4, row=3)
         
-        self.threading()
+        self.bouton_rand= tk.Button(self, text="Connection", command = self.connection)
+        self.bouton_rand.grid(column=0, row=4)
+        
+        
         #self.thread_rand()
-    
+    def connection(self):
+        self.mydmx.connection()
+        
     def my_insert(self): # adding data to Combobox
         #if e1.get() not in cb1['values']:
         list_values=list(self.cb1['values'])
@@ -108,6 +113,7 @@ class ExperimentTab(ttk.Frame):
         
     def start(self):
         self.enable=1
+        self.threading()
 
     def blackout(self):
         self.enable=0
