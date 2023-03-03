@@ -18,3 +18,23 @@ class Par_Led_615_AFX(object):
         if value >255 :
             raise ValueError(num_channel+" Must be less than 255")
         self.data[num_channel] = value
+        
+
+class Strobe_132_RGB(object):
+    
+    def __init__(self,position) -> None:
+        self.data=np.zeros([3], np.uint8)
+        self.pos=position
+        self.number_channel=3
+        self.position=position
+    
+    def set_channel(self,num_channel,value):
+        if type(num_channel) is not int:
+            raise TypeError(str(num_channel)+" Must be int")
+        if type(value) is not int:
+            raise TypeError(str(num_channel)+" Must be int")
+        if num_channel >511 :
+            raise ValueError(num_channel+" Must be less than 512")
+        if value >255 :
+            raise ValueError(num_channel+" Must be less than 255")
+        self.data[num_channel] = value

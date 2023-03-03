@@ -17,6 +17,7 @@ class ExperimentTab(ttk.Frame):
         
     def creer_widgets(self):
         self.enable=0
+        self.enable_strobe=0
         self.enable_rand=0
         self.max=255
         list_group=[]
@@ -42,13 +43,15 @@ class ExperimentTab(ttk.Frame):
         self.range_bleu = tk.Scale(self, from_=255, to=0, orient='vertical',label="BLUE")
         self.range_bleu.grid(column=3, row=1)
         
-        self.freq = tk.Scale(self, from_=1000, to=20, orient='vertical',label="FREQ")
+        self.freq = tk.Scale(self, from_=255, to=20, orient='vertical',label="FREQ")
         self.freq.grid(column=4, row=1)
         
         self.amp = tk.Scale(self, from_=255, to=0, orient='vertical',label="AMP")
         self.amp.grid(column=5, row=1)
         self.amp.set(255)
         
+        self.shuffle = tk.Scale(self, from_=100, to=0, orient='vertical',label="Shuffle")
+        self.shuffle.grid(column=6, row=1)
         
         self.canvas = tk.Canvas(self, width = 500, height = 500)
         self.rectangle=self.canvas.create_rectangle(50, 110,300,280, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()) +"""""")
@@ -65,6 +68,9 @@ class ExperimentTab(ttk.Frame):
         
         self.bouton_rand= tk.Button(self, text="Random", command = self.rand_light)
         self.bouton_rand.grid(column=4, row=3)
+        
+        self.bouton_rand= tk.Button(self, text="Strobe", command = self.strobe)
+        self.bouton_rand.grid(column=5, row=3)
         
         self.bouton_rand= tk.Button(self, text="Connection", command = self.connection)
         self.bouton_rand.grid(column=0, row=4)
@@ -99,6 +105,20 @@ class ExperimentTab(ttk.Frame):
                 self.range_vert.set(random.randint(1,self.max))
                 self.range_bleu.set(random.randint(1,self.max))
                 time.sleep(round(60*1/self.freq.get(),3))
+            
+            if self.enable_strobe:
+                time.sleep(round(60*1/self.freq.get()*(self.shuffle.get()/100),3))
+                self.mydmx.set_channel(0,self.range_rouge.get())
+                self.mydmx.set_channel(1,self.range_vert.get())
+                self.mydmx.set_channel(2,self.range_bleu.get())
+                #self.mydmx.set_data(self.par_led1.data,5,5)
+                self.mydmx.send_data()
+                self.mydmx.set_channel(0,0)
+                self.mydmx.set_channel(1,0)
+                self.mydmx.set_channel(2,0)
+                #self.mydmx.set_data(self.par_led1.data,5,5)
+                self.mydmx.send_data()
+                time.sleep(round(60*1/self.freq.get()*(1-self.shuffle.get()/100),3))
      
     def threading(self):
         t1=thr.Thread(target=self.change_color)
@@ -106,10 +126,16 @@ class ExperimentTab(ttk.Frame):
         
     def rand_light(self):
         self.enable_rand=1
-        
+        self.enable_strobe=0
+    
+    def strobe(self):
+        self.enable_strobe=1
+        self.enable_rand=0
+         
     def stop(self):
         self.enable=0
         self.enable_rand=0
+        self.enable_strobe=0
         
     def start(self):
         self.enable=1
@@ -118,6 +144,7 @@ class ExperimentTab(ttk.Frame):
     def blackout(self):
         self.enable=0
         self.enable_rand=0
+        self.enable_strobe=0
         self.range_rouge.set(0)
         self.range_vert.set(0)
         self.range_bleu.set(0)
