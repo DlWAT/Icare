@@ -10,7 +10,7 @@ class Application(tk.Tk):
         self.tab1 = ttk.Frame(tabControl)
         self.tab2 = ExperimentTab.ExperimentTab()
         self.tab3 = ttk.Frame(tabControl)
-        tabControl.add(self.tab1, text='Home')
+        #tabControl.add(self.tab1, text='Home')
         tabControl.add(self.tab2, text='Direct') 
         tabControl.add(self.tab3, text='Sequence') 
         tabControl.pack(expand=1, fill="both")

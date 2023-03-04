@@ -5,8 +5,12 @@ import time
 import pydmxIcare
 import pydmxlight
 import random
+from tkinter import colorchooser
 def rgb_to_hex(r, g, b):
     return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
+def hex_to_rgb(hex):
+    return tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
 
 class ExperimentTab(ttk.Frame):
     def __init__(self):
@@ -69,17 +73,29 @@ class ExperimentTab(ttk.Frame):
         self.bouton_rand= tk.Button(self, text="Random", command = self.rand_light)
         self.bouton_rand.grid(column=4, row=3)
         
-        self.bouton_rand= tk.Button(self, text="Strobe", command = self.strobe)
-        self.bouton_rand.grid(column=5, row=3)
+        self.bouton_strobe= tk.Button(self, text="Strobe", command = self.strobe)
+        self.bouton_strobe.grid(column=5, row=3)
         
         self.bouton_rand= tk.Button(self, text="Connection", command = self.connection)
         self.bouton_rand.grid(column=0, row=4)
         
+        self.bouton_co= tk.Button(self, text="Connection", command = self.connection)
+        self.bouton_co.grid(column=0, row=4)
+        
+        self.bouton_color= tk.Button(self, text="Color", command = self.ask_color)
+        self.bouton_color.grid(column=1, row=2)
         
         #self.thread_rand()
     def connection(self):
         self.mydmx.connection()
-        
+    def ask_color(self):
+        my_color=colorchooser.askcolor()
+        self.canvas.itemconfig(self.rectangle, fill=""""""+my_color[1])
+        self.range_rouge.set(my_color[0][0])
+        self.range_vert.set(my_color[0][1])
+        self.range_bleu.set(my_color[0][2])
+        #return my_color
+    
     def my_insert(self): # adding data to Combobox
         #if e1.get() not in cb1['values']:
         list_values=list(self.cb1['values'])
@@ -103,18 +119,21 @@ class ExperimentTab(ttk.Frame):
                 time.sleep(round(60*1/self.freq.get(),3))
             
             if self.enable_strobe:
-                time.sleep(round(60*1/self.freq.get()*(self.shuffle.get()/100),3))
+                
                 self.mydmx.set_channel(0,self.range_rouge.get())
                 self.mydmx.set_channel(1,self.range_vert.get())
                 self.mydmx.set_channel(2,self.range_bleu.get())
                 #self.mydmx.set_data(self.par_led1.data,5,5)
                 self.mydmx.send_data()
+                time.sleep(round(60*1/self.freq.get()*(self.shuffle.get()/100),3))
+                
                 self.mydmx.set_channel(0,0)
                 self.mydmx.set_channel(1,0)
                 self.mydmx.set_channel(2,0)
                 #self.mydmx.set_data(self.par_led1.data,5,5)
                 self.mydmx.send_data()
                 time.sleep(round(60*1/self.freq.get()*(1-self.shuffle.get()/100),3))
+                
      
     def threading(self):
         t1=thr.Thread(target=self.change_color)
