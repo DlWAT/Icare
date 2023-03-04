@@ -43,14 +43,14 @@ class ExperimentTab(ttk.Frame):
         self.range_bleu = tk.Scale(self, from_=255, to=0, orient='vertical',label="BLUE")
         self.range_bleu.grid(column=3, row=1)
         
-        self.freq = tk.Scale(self, from_=255, to=20, orient='vertical',label="FREQ")
+        self.freq = tk.Scale(self, from_=1000, to=20, orient='vertical',label="FREQ")
         self.freq.grid(column=4, row=1)
         
         self.amp = tk.Scale(self, from_=255, to=0, orient='vertical',label="AMP")
         self.amp.grid(column=5, row=1)
         self.amp.set(255)
         
-        self.shuffle = tk.Scale(self, from_=100, to=0, orient='vertical',label="Shuffle")
+        self.shuffle = tk.Scale(self, from_=90, to=10, orient='vertical',label="Shuffle")
         self.shuffle.grid(column=6, row=1)
         
         self.canvas = tk.Canvas(self, width = 500, height = 500)
@@ -91,17 +91,9 @@ class ExperimentTab(ttk.Frame):
             if self.enable:
                 self.max=self.amp.get()
                 self.canvas.itemconfig(self.rectangle, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()))
-                #self.par_led1.set_channel(0,self.range_rouge.get())
-                #self.par_led1.set_channel(1,self.range_vert.get())
-                #self.par_led1.set_channel(2,self.range_bleu.get())
-                for i in range (7):
-                    self.mydmx.set_channel(16*i+0,random.randint(1,self.max))
-                    self.mydmx.set_channel(16*i+1,random.randint(1,self.max))
-                    self.mydmx.set_channel(16*i+2,random.randint(1,self.max))
-                    #self.mydmx.set_channel(16*i+0,self.range_rouge.get())
-                    #self.mydmx.set_channel(16*i+1,self.range_vert.get())
-                    #self.mydmx.set_channel(16*i+2,self.range_bleu.get())
-                #self.mydmx.set_data(self.par_led1.data,5,5)
+                self.mydmx.set_channel(0,self.range_rouge.get())
+                self.mydmx.set_channel(1,self.range_vert.get())
+                self.mydmx.set_channel(2,self.range_bleu.get())
                 self.mydmx.send_data()
                 #self.max=self.amp.get()
             if self.enable_rand:

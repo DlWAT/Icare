@@ -18,6 +18,6 @@ class Application(tk.Tk):
 if __name__ == "__main__":
     app = Application()
     app.title("Icare")
-    app.geometry("950x750")
+    app.geometry("1280x720")
     app.mainloop()
 
