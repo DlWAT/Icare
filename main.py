@@ -1,21 +1,31 @@
-import pydmxIcare
-import pydmxlight
-mydmx= pydmxIcare.DMX_Icare()
-par_led1=pydmxlight.Par_Led_615_AFX(5,0)
-mydmx.connection()
-print(mydmx.data[0:5])
+from tkinter import ttk 
+import tkinter as tk 
 
-mydmx.set_channel(1,255)
-print(mydmx.data[0:5])
+titles={'Id': [1,2,3,4,5, 6, 7, 8, 9], 'Names':['Tom', 'Rob', 'Tim', 'Jim', 'Kim', 'Kim', 'Kim', 'Kim', 'Kim'], 'Column': [1,2,3,4,5, 6, 7, 8, 9]}
 
-par_led1.set_channel(2,125)
-par_led1.set_channel(3,18)
-mydmx.set_data(par_led1.data,5,5)
-print(mydmx.data[0:10])
-mydmx.send_data()
+  
+window = tk.Tk() 
 
-#group1=pydmxIcare.light_group()
+treev = ttk.Treeview(window, selectmode ='browse') 
+treev.pack(side='left',expand=True, fill='both') 
+  
 
-#group1.addtogroup(par_led1)  
+verscrlbar = ttk.Scrollbar(window,  
+                           orient ="vertical",  
+                           command = treev.yview) 
+  
+verscrlbar.pack(side ='right', fill ='y')   
+treev.configure(yscrollcommand = verscrlbar.set) 
 
+treev["columns"] = list(x for x in range(len(list(titles.keys()))))
+treev['show'] = 'headings'
 
+  
+for x, y in enumerate(titles.keys()):
+    treev.column(x, minwidth=20, stretch=True,  anchor='c')
+    treev.heading(x, text=y)
+
+for args in zip(*list(titles.values())):
+    treev.insert("", 'end', values =args) 
+
+window.mainloop() 
