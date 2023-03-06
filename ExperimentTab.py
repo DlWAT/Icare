@@ -80,9 +80,6 @@ class ExperimentTab(ttk.Frame):
         self.bouton_rand= tk.Button(self, text="Connection", command = self.connection)
         self.bouton_rand.grid(column=0, row=4)
         
-        self.bouton_co= tk.Button(self, text="Connection", command = self.connection)
-        self.bouton_co.grid(column=0, row=4)
-        
         self.bouton_color= tk.Button(self, text="Color", command = self.ask_color)
         self.bouton_color.grid(column=1, row=2)
         
