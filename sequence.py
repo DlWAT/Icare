@@ -15,6 +15,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import threading as thr
+import numpy as np
 from tkinter import colorchooser
 
 class SequenceTab(ttk.Frame):
@@ -59,23 +60,22 @@ class SequenceTab(ttk.Frame):
 
             for args in zip(*list(titles.values())):
                   self.trv.insert("", 'end', values =args) 
-            self.bouton_blackout= tk.Button(wrapper2, text="Blackout")#, command = self.blackout)
-            self.bouton_blackout.grid(column=0, row=0)
+                       
             
-            self.bouton_rand= tk.Button(wrapper2, text="Random")#, command = self.rand_light)
-            self.bouton_rand.grid(column=0, row=1)
-            
-            self.bouton_strobe= tk.Button(wrapper2, text="Strobe")#, command = self.strobe)
+            self.bouton_strobe= tk.Button(wrapper2, text="Strobe", command = self.strobe)
             self.bouton_strobe.grid(column=0, row=2)
             
-            self.bouton_rand= tk.Button(wrapper2, text="Connection")#, command = self.connection)
-            self.bouton_rand.grid(column=1, row=0)
+            self.fond= tk.Button(wrapper2, text="Fondu", command = self.fondu)
+            self.fond.grid(column=1, row=0)
             
             self.bouton_uni= tk.Button(wrapper2, text="Uniform", command = self.uni)
             self.bouton_uni.grid(column=1, row=1)
             
             self.bouton_color= tk.Button(wrapper2, text="Add row", command = self.add_item)
             self.bouton_color.grid(column=1, row=2)
+
+            self.bouton_save_seq= tk.Button(wrapper2, text="Save sequence", command = self.save_seq)
+            self.bouton_save_seq.grid(column=1, row=3)
             
             self.list_group=['ParLED1','ParLED2','ParLED3','ParLED4','ParLED5','ParLED6','ParLED7','ParLED8','ParLED9','Strobe1','Strobe2']
             sel=tk.StringVar()
@@ -84,13 +84,24 @@ class SequenceTab(ttk.Frame):
             
             self.l1=tk.Label(wrapper2,text='#Line')
             self.l1.grid(row=0,column=6)
-
             self.e1=tk.Entry(wrapper2,width=10)
             self.e1.grid(row=0,column=7)
-            self.l1=tk.Label(wrapper2,text='#tps')
-            self.l1.grid(row=0,column=8)
+            
+            self.l2=tk.Label(wrapper2,text='#tps')
+            self.l2.grid(row=0,column=8)
             self.e2=tk.Entry(wrapper2,width=10)
             self.e2.grid(row=0,column=9)
+            
+            self.l3=tk.Label(wrapper2,text='Freq')
+            self.l3.grid(row=0,column=10)
+            self.e3=tk.Entry(wrapper2,width=10)
+            self.e3.grid(row=0,column=11)
+            
+            self.l4=tk.Label(wrapper2,text='Amp')
+            self.l4.grid(row=0,column=12)
+            self.e4=tk.Entry(wrapper2,width=10)
+            self.e4.grid(row=0,column=13)
+            
     def add_item(self):
         self.trv.insert("", "end", values=("", ""))
     
@@ -123,7 +134,38 @@ class SequenceTab(ttk.Frame):
             else:
                 val="|"
                 self.edit_item(row+i,col+2,val)
-        
+                
+    def fondu(self):
+        my_color=colorchooser.askcolor()
+        my_color2=colorchooser.askcolor()
+        name=self.cb1.get()
+        col=self.list_group.index(name)
+        row=int(self.e1.get())
+        nbrtps=int(self.e2.get())
+        for i in range(nbrtps):
+            if i==0:
+                val="fond_"+str(nbrtps)+'_'+str(my_color[0][0])+'_'+str(my_color[0][1])+'_'+str(my_color[0][2])+'_'+str(my_color2[0][0])+'_'+str(my_color2[0][1])+'_'+str(my_color2[0][2])
+                self.edit_item(row+i,col+2,val)
+            else:
+                val="|"
+                self.edit_item(row+i,col+2,val)
+    
+    def strobe(self):
+        my_color=colorchooser.askcolor()
+        name=self.cb1.get()
+        col=self.list_group.index(name)
+        row=int(self.e1.get())
+        nbrtps=int(self.e2.get())
+        freq=int(self.e3.get())
+        for i in range(nbrtps):
+            if i==0:
+                val="str_"+str(nbrtps)+'_'+str(my_color[0][0])+'_'+str(my_color[0][1])+'_'+str(my_color[0][2])+'_'+str(freq)
+                self.edit_item(row+i,col+2,val)
+            else:
+                val="|"
+                self.edit_item(row+i,col+2,val)
+    
+    
     def edit_item(self,row,col,val):
         
         item_details = self.trv.item("I00"+str(row))
@@ -132,5 +174,15 @@ class SequenceTab(ttk.Frame):
         L_values=item_details.get("values")
         L_values[col]=val
         self.trv.item("I00"+str(row), text="blub", values=tuple(L_values))
+        
+    def save_seq(self):
+        ar=[['Line','Structure','ParLED1','ParLED2','ParLED3','ParLED4','ParLED5','ParLED6','ParLED7','ParLED8','ParLED9','Strobe1','Strobe2']]
+        for line in self.trv.get_children():
+            ar_i=[]
+            for value in self.trv.item(line)['values']:
+                ar_i.append(value)
+            ar.append(ar_i)
+        y=np.array([np.array(xi) for xi in ar])
+        print(y)
         
             
