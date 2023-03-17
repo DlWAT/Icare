@@ -1,35 +1,48 @@
-import tkinter as tk
-import tkinter.ttk as ttk
-import threading
-root = tk.Tk()
-tview = ttk.Treeview(root)
-tview["columns"] = ("SLOT_1", "SLOT_2")
-tview.column("SLOT_1", width=100)
-tview.column("SLOT_2", width=100)
+# Import the required libraries
+from tkinter import *
+from tkinter import ttk
 
-tview.heading("#0", text="Column 0", anchor="w")
-tview.heading("SLOT_1", text="Column 1")
-tview.heading("SLOT_2", text="Column 2")
+# Create an instance of tkinter frame
+win = Tk()
 
-def test_program_thread():
-    thread = threading.Thread(None, edit_item, None, (), {})
-    thread.start()
+# Set the size of the tkinter window
+win.geometry("700x350")
 
-def add_item():
-    tview.insert("", "end", values=("", "bar"))
+# Create an instance of Style widget
+style = ttk.Style()
+style.theme_use('clam')
 
+# Add a Treeview widget
+tree = ttk.Treeview(win, column=("c1", "c2"), show='headings', height=8)
+tree.column("# 1", anchor=CENTER)
+tree.heading("# 1", text="ID")
+tree.column("# 2", anchor=CENTER)
+tree.heading("# 2", text="Company")
 
-def edit_item():
-    focused = tview.focus()
-    x = input('Enter a Value you want to change')
-    tview.item(focused, values=("", str(x)))
+# Insert the data in Treeview widget
+tree.insert('', 'end', text="1", values=('1', 'Honda'))
+tree.insert('', 'end', text="2", values=('2', 'Hyundai'))
+tree.insert('', 'end', text="3", values=('3', 'Tesla'))
+tree.insert('', 'end', text="4", values=('4', 'Wolkswagon'))
+tree.insert('', 'end', text="5", values=('5', 'Tata Motors'))
+tree.insert('', 'end', text="6", values=('6', 'Renault'))
 
-tview.pack()
+tree.pack()
 
-add_item = tk.Button(root, text="Add item", command=add_item)
-add_item.pack(expand=True, fill='both')
+def edit():
+   # Get selected item to Edit
+   selected_item = tree.selection()[0]
+   tree.item(selected_item, text="blub", values=("foo", "bar"))
 
-edit_item_button = tk.Button(root, text="Edit item", command=test_program_thread)
-edit_item_button.pack(expand=True, fill='both')
+def delete():
+   # Get selected item to Delete
+   selected_item = tree.selection()[0]
+   tree.delete(selected_item)
 
-root.mainloop()
+# Add Buttons to Edit and Delete the Treeview items
+edit_btn = ttk.Button(win, text="Edit", command=edit)
+edit_btn.pack()
+del_btn = ttk.Button(win, text="Delete", command=delete)
+del_btn.pack()
+
+win.mainloop()

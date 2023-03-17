@@ -38,7 +38,8 @@ class SequenceTab(ttk.Frame):
             
             wrapper2 = tk.LabelFrame(self,text="Command")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
-            titles={'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2",'','','','',''],\
+            titles={'Line': ["1","2","3","4","5","6","7","8",'','','','',''],\
+                    'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2",'','','','',''],\
                     'ParLED1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'ParLED2':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'ParLED3':['','', '', '', '', '', '', '', '', '', '', '', ''],\
@@ -70,12 +71,26 @@ class SequenceTab(ttk.Frame):
             self.bouton_rand= tk.Button(wrapper2, text="Connection")#, command = self.connection)
             self.bouton_rand.grid(column=1, row=0)
             
-            self.bouton_co= tk.Button(wrapper2, text="Connection")#, command = self.connection)
-            self.bouton_co.grid(column=1, row=1)
+            self.bouton_uni= tk.Button(wrapper2, text="Uniform", command = self.uni)
+            self.bouton_uni.grid(column=1, row=1)
             
             self.bouton_color= tk.Button(wrapper2, text="Add row", command = self.add_item)
             self.bouton_color.grid(column=1, row=2)
-        
+            
+            self.list_group=['ParLED1','ParLED2','ParLED3','ParLED4','ParLED5','ParLED6','ParLED7','ParLED8','ParLED9','Strobe1','Strobe2']
+            sel=tk.StringVar()
+            self.cb1 = ttk.Combobox(wrapper2, values=self.list_group,width=7,textvariable=sel)
+            self.cb1.grid(row=0,column=5)
+            
+            self.l1=tk.Label(wrapper2,text='#Line')
+            self.l1.grid(row=0,column=6)
+
+            self.e1=tk.Entry(wrapper2,width=10)
+            self.e1.grid(row=0,column=7)
+            self.l1=tk.Label(wrapper2,text='#tps')
+            self.l1.grid(row=0,column=8)
+            self.e2=tk.Entry(wrapper2,width=10)
+            self.e2.grid(row=0,column=9)
     def add_item(self):
         self.trv.insert("", "end", values=("", ""))
     
@@ -97,7 +112,25 @@ class SequenceTab(ttk.Frame):
             
     def uni(self):
         my_color=colorchooser.askcolor()
-        print(my_color[0][0])
-        print(my_color[0][1])
-        print(my_color[0][2])
+        name=self.cb1.get()
+        col=self.list_group.index(name)
+        row=int(self.e1.get())
+        nbrtps=int(self.e2.get())
+        for i in range(nbrtps):
+            if i==0:
+                val="uni_"+str(nbrtps)+'_'+str(my_color[0][0])+'_'+str(my_color[0][1])+'_'+str(my_color[0][2])
+                self.edit_item(row+i,col+2,val)
+            else:
+                val="|"
+                self.edit_item(row+i,col+2,val)
+        
+    def edit_item(self,row,col,val):
+        
+        item_details = self.trv.item("I00"+str(row))
+        # The row's displayed text will be in the 'values' key.
+        
+        L_values=item_details.get("values")
+        L_values[col]=val
+        self.trv.item("I00"+str(row), text="blub", values=tuple(L_values))
+        
             
