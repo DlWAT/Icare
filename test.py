@@ -1,48 +1,35 @@
-# Import the required libraries
-from tkinter import *
-from tkinter import ttk
+import tkinter
+import tkinter.ttk
 
-# Create an instance of tkinter frame
-win = Tk()
+class GUI():
+    def __init__(self, master):
+        self.view = tkinter.ttk.Treeview(master)
+        self.view.pack()
+        self.view.heading('#0', text='Name')
+        
+        self.view.insert('', 'end', text='Foo')
+        self.view.insert('', 'end', text='Bar')
+        self.view['columns'] = ('foo')
+        self.view.heading('foo', text='foo')
+        self.view.set(self.view.get_children()[0], 'foo', 'test')
+        self.add_columns(('bar', 'blesh'))
 
-# Set the size of the tkinter window
-win.geometry("700x350")
+    def add_columns(self, columns, **kwargs):
+        # Preserve current column headers and their settings
+        current_columns = list(self.view['columns'])
+        current_columns = {key:self.view.heading(key) for key in current_columns}
 
-# Create an instance of Style widget
-style = ttk.Style()
-style.theme_use('clam')
+        # Update with new columns
+        self.view['columns'] = list(current_columns.keys()) + list(columns)
+        for key in columns:
+            self.view.heading(key, text=key, **kwargs)
 
-# Add a Treeview widget
-tree = ttk.Treeview(win, column=("c1", "c2"), show='headings', height=8)
-tree.column("# 1", anchor=CENTER)
-tree.heading("# 1", text="ID")
-tree.column("# 2", anchor=CENTER)
-tree.heading("# 2", text="Company")
-
-# Insert the data in Treeview widget
-tree.insert('', 'end', text="1", values=('1', 'Honda'))
-tree.insert('', 'end', text="2", values=('2', 'Hyundai'))
-tree.insert('', 'end', text="3", values=('3', 'Tesla'))
-tree.insert('', 'end', text="4", values=('4', 'Wolkswagon'))
-tree.insert('', 'end', text="5", values=('5', 'Tata Motors'))
-tree.insert('', 'end', text="6", values=('6', 'Renault'))
-
-tree.pack()
-
-def edit():
-   # Get selected item to Edit
-   selected_item = tree.selection()[0]
-   tree.item(selected_item, text="blub", values=("foo", "bar"))
-
-def delete():
-   # Get selected item to Delete
-   selected_item = tree.selection()[0]
-   tree.delete(selected_item)
-
-# Add Buttons to Edit and Delete the Treeview items
-edit_btn = ttk.Button(win, text="Edit", command=edit)
-edit_btn.pack()
-del_btn = ttk.Button(win, text="Delete", command=delete)
-del_btn.pack()
-
-win.mainloop()
+        # Set saved column values for the already existing columns
+        for key in current_columns:
+            # State is not valid to set with heading
+            state = current_columns[key].pop('state')
+            self.view.heading(key, **current_columns[key])
+            
+tk = tkinter.Tk()
+GUI(tk)
+tk.mainloop()
