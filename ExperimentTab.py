@@ -39,8 +39,10 @@ class ExperimentTab(ttk.Frame):
         b1=tk.Button(self,text='Add',command=self.my_insert)
         b1.grid(row=0,column=3)
         
-        self.range_rouge = tk.Scale(self, from_=255, to=0, orient='vertical',label="RED")
+        self.range_rouge = ttk.Scale(self, from_=255, to=0, orient='vertical')
         self.range_rouge.grid(column=1, row=1)
+
+        self.scale.grid(row=0, column=0, padx=(20, 10), pady=(20, 0), sticky="ew")
         
         self.range_vert = tk.Scale(self, from_=255, to=0, orient='vertical',label="GREEN")
         self.range_vert.grid(column=2, row=1)

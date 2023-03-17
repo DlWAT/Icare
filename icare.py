@@ -15,9 +15,11 @@ class Application(tk.Tk):
         tabControl.add(self.tab3, text='Sequence') 
         tabControl.pack(expand=1, fill="both")
         style = ttk.Style(self)
-
+        self.tk.call("source", "Azure-ttk-theme-main/azure.tcl")
+        self.tk.call("set_theme", "dark")
+        #style.theme_use('azure')
         # Set the theme with the theme_use method
-        #style.theme_use('xpnative')
+        
 if __name__ == "__main__":
     app = Application()
     app.title("Icare")
