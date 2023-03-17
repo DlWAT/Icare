@@ -27,12 +27,12 @@ class SequenceTab(ttk.Frame):
             wrapper1 = tk.LabelFrame(self,text="Sequence")
             wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
             self.trv=ttk.Treeview(wrapper1,columns=(1,2,3,4))
-            style = ttk.Style(trv)
+            style = ttk.Style(self.trv)
             style.configure('Trerview',rowheight=30,height="5")
             self.trv.pack(expand=True, fill='both')
             
             
-            xscroll=ttk.Scrollbar(wrapper1,orient="horizontal",command=trv.xview)
+            xscroll=ttk.Scrollbar(wrapper1,orient="horizontal",command=self.trv.xview)
             xscroll.pack(side="bottom", fill="x")
             
             wrapper2 = tk.LabelFrame(self,text="Command")
