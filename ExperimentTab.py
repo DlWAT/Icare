@@ -30,19 +30,19 @@ class ExperimentTab(ttk.Frame):
         self.cb1 = ttk.Combobox(self, values=list_group,width=7,textvariable=sel)
         self.cb1.grid(row=0,column=0)
         
-        self.l1=tk.Label(self,text='New group')
+        self.l1=ttk.Label(self,text='New group')
         self.l1.grid(row=0,column=1)
 
         self.e1=tk.Entry(self,bg='Yellow',width=10)
         self.e1.grid(row=0,column=2)
         
-        b1=tk.Button(self,text='Add',command=self.my_insert)
+        b1=ttk.Button(self,text='Add',command=self.my_insert)
         b1.grid(row=0,column=3)
         
         self.range_rouge = ttk.Scale(self, from_=255, to=0, orient='vertical')
         self.range_rouge.grid(column=1, row=1)
 
-        self.scale.grid(row=0, column=0, padx=(20, 10), pady=(20, 0), sticky="ew")
+        #self.Scale.grid(row=0, column=0, padx=(20, 10), pady=(20, 0), sticky="ew")
         
         self.range_vert = tk.Scale(self, from_=255, to=0, orient='vertical',label="GREEN")
         self.range_vert.grid(column=2, row=1)
@@ -64,25 +64,25 @@ class ExperimentTab(ttk.Frame):
         self.rectangle=self.canvas.create_rectangle(50, 110,300,280, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()) +"""""")
         self.canvas.grid(column=0, row=2)
 
-        self.bouton_stop= tk.Button(self, text="Stop", command = self.stop)
+        self.bouton_stop= ttk.Button(self, text="Stop", command = self.stop)
         self.bouton_stop.grid(column=2, row=3)
         
-        self.bouton_start= tk.Button(self, text="Start", command = self.start)
+        self.bouton_start= ttk.Button(self, text="Start", command = self.start)
         self.bouton_start.grid(column=1, row=3)
         
-        self.bouton_blackout= tk.Button(self, text="Blackout", command = self.blackout)
+        self.bouton_blackout= ttk.Button(self, text="Blackout", command = self.blackout)
         self.bouton_blackout.grid(column=3, row=3)
         
-        self.bouton_rand= tk.Button(self, text="Random", command = self.rand_light)
+        self.bouton_rand= ttk.Button(self, text="Random", command = self.rand_light)
         self.bouton_rand.grid(column=4, row=3)
         
-        self.bouton_strobe= tk.Button(self, text="Strobe", command = self.strobe)
+        self.bouton_strobe= ttk.Button(self, text="Strobe", command = self.strobe)
         self.bouton_strobe.grid(column=5, row=3)
         
-        self.bouton_rand= tk.Button(self, text="Connection", command = self.connection)
+        self.bouton_rand= ttk.Button(self, text="Connection", command = self.connection)
         self.bouton_rand.grid(column=0, row=4)
         
-        self.bouton_color= tk.Button(self, text="Color", command = self.ask_color)
+        self.bouton_color= ttk.Button(self, text="Color", command = self.ask_color)
         self.bouton_color.grid(column=1, row=2)
         
         #self.thread_rand()

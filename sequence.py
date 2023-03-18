@@ -39,7 +39,7 @@ class SequenceTab(ttk.Frame):
             
             wrapper2 = tk.LabelFrame(self,text="Command")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
-            titles={'Line': ["1","2","3","4","5","6","7","8",'','','','',''],\
+            self.titles={'Line': ["1","2","3","4","5","6","7","8",'','','','',''],\
                     'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2",'','','','',''],\
                     'ParLED1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'ParLED2':['','', '', '', '', '', '', '', '', '', '', '', ''],\
@@ -52,34 +52,34 @@ class SequenceTab(ttk.Frame):
                     'ParLED9':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'Strobe1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'Strobe2':['','', '', '', '', '', '', '', '', '', '', '', '']}
-            self.trv["columns"] = list(x for x in range(len(list(titles.keys()))))
+            self.trv["columns"] = list(x for x in range(len(list(self.titles.keys()))))
             self.trv['show'] = 'headings'
-            for x, y in enumerate(titles.keys()):
+            for x, y in enumerate(self.titles.keys()):
                   self.trv.column(x, minwidth=20,width=50, stretch=True,  anchor='c')
                   self.trv.heading(x, text=y)
 
-            for args in zip(*list(titles.values())):
+            for args in zip(*list(self.titles.values())):
                   self.trv.insert("", 'end', values =args) 
                        
             
-            self.bouton_strobe= tk.Button(wrapper2, text="Strobe", command = self.strobe)
+            self.bouton_strobe= ttk.Button(wrapper2, text="Strobe", command = self.strobe)
             self.bouton_strobe.grid(column=0, row=2)
             
-            self.fond= tk.Button(wrapper2, text="Fondu", command = self.fondu)
+            self.fond= ttk.Button(wrapper2, text="Fondu", command = self.fondu)
             self.fond.grid(column=1, row=0)
             
-            self.bouton_uni= tk.Button(wrapper2, text="Uniform", command = self.uni)
+            self.bouton_uni= ttk.Button(wrapper2, text="Uniform", command = self.uni)
             self.bouton_uni.grid(column=1, row=1)
             
-            self.bouton_color= tk.Button(wrapper2, text="Add row", command = self.add_item)
+            self.bouton_color= ttk.Button(wrapper2, text="Add row", command = self.add_item)
             self.bouton_color.grid(column=1, row=2)
 
-            self.bouton_save_seq= tk.Button(wrapper2, text="Save sequence", command = self.save_seq)
+            self.bouton_save_seq= ttk.Button(wrapper2, text="Save sequence", command = self.save_seq)
             self.bouton_save_seq.grid(column=1, row=3)
             
             self.list_group=['ParLED1','ParLED2','ParLED3','ParLED4','ParLED5','ParLED6','ParLED7','ParLED8','ParLED9','Strobe1','Strobe2']
             sel=tk.StringVar()
-            self.cb1 = ttk.Combobox(wrapper2, values=self.list_group,width=7,textvariable=sel)
+            self.cb1 = ttk.Combobox(wrapper2, values=self.list_group,width=20,textvariable=sel)
             self.cb1.grid(row=0,column=5)
             
             self.l1=tk.Label(wrapper2,text='#Line')
@@ -183,6 +183,10 @@ class SequenceTab(ttk.Frame):
                 ar_i.append(value)
             ar.append(ar_i)
         y=np.array([np.array(xi) for xi in ar])
-        print(y)
+        output={}
+        output["Header"]={"Structure":self.titles["Structure"]}
+        output["Header"]["Tempo"]="60"
+        output["data"]={}
+        print(output)
         
             
