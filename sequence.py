@@ -17,6 +17,7 @@ import tkinter.ttk as ttk
 import threading as thr
 import numpy as np
 from tkinter import colorchooser
+import json
 
 class SequenceTab(ttk.Frame):
     def __init__(self):
@@ -39,7 +40,7 @@ class SequenceTab(ttk.Frame):
             
             wrapper2 = tk.LabelFrame(self,text="Command")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
-            self.titles={'Line': ["1","2","3","4","5","6","7","8",'','','','',''],\
+            self.titles={'Line': ["1","2","3","4","5","6","7","8",'9','10','11','12','13'],\
                     'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2",'','','','',''],\
                     'ParLED1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
                     'ParLED2':['','', '', '', '', '', '', '', '', '', '', '', ''],\
@@ -103,7 +104,17 @@ class SequenceTab(ttk.Frame):
             self.e4.grid(row=0,column=13)
             
     def add_item(self):
-        self.trv.insert("", "end", values=("", ""))
+        ar=[]
+        for line in self.trv.get_children():
+            ar_i=[]
+            for value in self.trv.item(line)['values']:
+                ar_i.append(value)
+            ar.append(ar_i)
+        y=np.array([np.array(xi) for xi in ar])
+        col=(y[:,0])
+        
+        print(list(col))
+        self.trv.insert("", "end", values=(str(int(list(col)[-1])+1),'', '', '', '', '', '', '', '', '', '', '', ''))
     
     def add_columns(self, columns, **kwargs):
         # Preserve current column headers and their settings
@@ -186,7 +197,15 @@ class SequenceTab(ttk.Frame):
         output={}
         output["Header"]={"Structure":self.titles["Structure"]}
         output["Header"]["Tempo"]="60"
+        output["Header"]["Modules"]=list(y[0][2:])
+        output["Header"]['Line']=["1","2","3","4","5","6","7","8",'9','10','11','12','13']
         output["data"]={}
-        print(output)
+        for i in range (1,len(output["Header"]['Line'])):
+            if output["Header"]['Line'][i]:
+                
+                output["data"][str(i)]=list(y[i][2:])
+        with open("test.json", "w") as write_file:
+            json.dump(output, write_file, indent=8)
+        
         
             
