@@ -6,7 +6,8 @@ import live
 class Application(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        
+        global style
+        style = ttk.Style(self)
         tabControl=ttk.Notebook(self)
         self.tab1 = ttk.Frame(tabControl)
         self.tab2 = ExperimentTab.ExperimentTab()
@@ -17,7 +18,7 @@ class Application(tk.Tk):
         tabControl.add(self.tab3, text='Sequence') 
         tabControl.add(self.tab4, text='Live') 
         tabControl.pack(expand=1, fill="both")
-        style = ttk.Style(self)
+        
         self.tk.call("source", "Azure-ttk-theme-main/azure.tcl")
         self.tk.call("set_theme", "dark")
         #style.theme_use('azure')
