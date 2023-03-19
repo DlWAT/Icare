@@ -15,34 +15,41 @@ class LiveTab(ttk.Frame):
             wrapper1 = tk.LabelFrame(self,text="Sequence")
             wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
             
+            wrapper_time=tk.LabelFrame(self,text="Time",height=10,width=2000)
+            wrapper_time.pack(fill="both",expand="no",padx=20)
+            self.progress_bar=ttk.Progressbar(wrapper_time, orient='horizontal', length=1800)
+            self.progress_bar.pack(padx=5,pady=5)
+            
             wrapper2 = tk.LabelFrame(self,text="Player")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
             
             wrapper3 = tk.LabelFrame(wrapper2,text="Control")
             wrapper3.grid(column=0, row=0)
             
+            
+            
             self.bouton_play= ttk.Button(wrapper3, text="Play")#, command = self.strobe)
-            self.bouton_play.grid(column=0, row=0)
+            self.bouton_play.grid(column=0, row=0,padx=5,pady=5)
             
             self.bouton_pause= ttk.Button(wrapper3, text="Pause")#, command = self.strobe)
-            self.bouton_pause.grid(column=1, row=0)
+            self.bouton_pause.grid(column=1, row=0,padx=5,pady=5)
             
             self.bouton_reset= ttk.Button(wrapper3, text="Reset",)# command = self.strobe)
-            self.bouton_reset.grid(column=2, row=0)
+            self.bouton_reset.grid(column=2, row=0,padx=5,pady=5)
             
             self.bouton_next= ttk.Button(wrapper3, text="Next",)# command = self.strobe)
-            self.bouton_next.grid(column=1, row=1)
+            self.bouton_next.grid(column=1, row=1,padx=5,pady=5)
             
             self.bouton_prev= ttk.Button(wrapper3, text="Previous",)# command = self.strobe)
-            self.bouton_prev.grid(column=0, row=1)
+            self.bouton_prev.grid(column=0, row=1,padx=5,pady=5)
             
             wrapper4 = tk.LabelFrame(wrapper2,text="Mods")
             wrapper4.grid(column=0, row=2)
             self.bouton_back= ttk.Button(wrapper4, text="Blackout",)# command = self.strobe)
-            self.bouton_back.grid(column=0, row=0)
+            self.bouton_back.grid(column=0, row=0,padx=5,pady=5)
             
             self.bouton_back= ttk.Button(wrapper4, text="Solo",)# command = self.strobe)
-            self.bouton_back.grid(column=1, row=0)
+            self.bouton_back.grid(column=1, row=0,padx=5,pady=5)
             
             self.bouton_back= ttk.Button(wrapper4, text="Random_fondu",)# command = self.strobe)
-            self.bouton_back.grid(column=2, row=0)
+            self.bouton_back.grid(column=2, row=0,padx=5,pady=5)
