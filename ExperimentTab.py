@@ -13,10 +13,6 @@ def rgb_to_hex(r, g, b):
 def hex_to_rgb(hex):
     return tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
 
-def ttk_scale_callback(value):
-    # 'value' seems to be a string - bug or feature?
-    value_label.config(text=round(float(value)))    
-    
 class ExperimentTab(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
@@ -30,95 +26,64 @@ class ExperimentTab(ttk.Frame):
         self.enable_rand=0
         self.max=255
         list_group=[]
-        wrapper1 = tk.LabelFrame(self,text="Test")
-        wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
-        wrapper2 = tk.LabelFrame(self,text="Poter")
-        wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
         sel=tk.StringVar()
         self.cb1 = ttk.Combobox(self, values=list_group,width=7,textvariable=sel)
-        #self.cb1.grid(row=0,column=0)
+        self.cb1.grid(row=0,column=0)
         
         self.l1=ttk.Label(self,text='New group')
-        #self.l1.grid(row=0,column=1)
+        self.l1.grid(row=0,column=1)
 
         self.e1=tk.Entry(self,bg='Yellow',width=10)
-        #self.e1.grid(row=0,column=2)
+        self.e1.grid(row=0,column=2)
         
         b1=ttk.Button(self,text='Add',command=self.my_insert)
-        #b1.grid(row=0,column=3)
+        b1.grid(row=0,column=3)
         
-        self.range_rouge_label=ttk.Label(wrapper2, text="Rouge")
-        slider_rouge = tk.StringVar()
-        slider_rouge.set('0')
-        self.range_rouge = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_rouge.set('%d' % float(s)))
-        self.range_rouge_label_value=ttk.Label(wrapper2, textvariable=slider_rouge)
-        self.range_rouge_label.grid(column=1, row=0)
+        self.range_rouge = ttk.Scale(self, from_=255, to=0, orient='vertical')
         self.range_rouge.grid(column=1, row=1)
-        self.range_rouge_label_value.grid(column=1, row=2)
+
+        #self.Scale.grid(row=0, column=0, padx=(20, 10), pady=(20, 0), sticky="ew")
         
-        self.range_vert_label=ttk.Label(wrapper2, text="Vert")
-        slider_vert = tk.StringVar()
-        slider_vert.set('0')
-        self.range_vert = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_vert.set('%d' % float(s)))
-        self.range_vert_label_value=ttk.Label(wrapper2, textvariable=slider_vert)
-        self.range_vert_label.grid(column=2, row=0)
+        self.range_vert = tk.Scale(self, from_=255, to=0, orient='vertical',label="GREEN")
         self.range_vert.grid(column=2, row=1)
-        self.range_vert_label_value.grid(column=2, row=2)
-        
-        self.range_bleu_label=ttk.Label(wrapper2, text="Bleu")
-        slider_bleu = tk.StringVar()
-        slider_bleu.set('0')
-        self.range_bleu = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_bleu.set('%d' % float(s)))
-        self.range_bleu_label_value=ttk.Label(wrapper2, textvariable=slider_bleu)
-        self.range_bleu_label.grid(column=3, row=0)
+
+        self.range_bleu = tk.Scale(self, from_=255, to=0, orient='vertical',label="BLUE")
         self.range_bleu.grid(column=3, row=1)
-        self.range_bleu_label_value.grid(column=3, row=2)
         
-        self.freq_label=ttk.Label(wrapper2, text="Fréquence")
-        slider_freq = tk.StringVar()
-        slider_freq.set('20')        
-        self.freq = ttk.Scale(wrapper2, from_=1000, to=20, orient='vertical', command=lambda s:slider_freq.set('%d' % float(s)))
-        self.freq_label_value=ttk.Label(wrapper2, textvariable=slider_freq)
-        self.freq_label.grid(column=4, row=0)
+        self.freq = tk.Scale(self, from_=1000, to=20, orient='vertical',label="FREQ")
         self.freq.grid(column=4, row=1)
-        self.freq_label_value.grid(column=4, row=2)
         
-        self.amp_label=ttk.Label(wrapper2, text="Amplitude")
-        slider_amp = tk.StringVar()
-        slider_amp.set(0)
-        self.amp = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_amp.set('%d' % float(s)))
-        self.amp_label_value=ttk.Label(wrapper2, textvariable=slider_amp)
-        self.amp_label.grid(column=5,row=0)
+        self.amp = tk.Scale(self, from_=255, to=0, orient='vertical',label="AMP")
         self.amp.grid(column=5, row=1)
-        self.amp_label_value.grid(column=5, row=2)
+        self.amp.set(255)
         
         self.shuffle = tk.Scale(self, from_=90, to=10, orient='vertical',label="Shuffle")
-        #self.shuffle.grid(column=6, row=1)
+        self.shuffle.grid(column=6, row=1)
         
         self.canvas = tk.Canvas(self, width = 500, height = 500)
         self.rectangle=self.canvas.create_rectangle(50, 110,300,280, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()) +"""""")
-        #self.canvas.grid(column=0, row=2)
+        self.canvas.grid(column=0, row=2)
 
         self.bouton_stop= ttk.Button(self, text="Stop", command = self.stop)
-        #self.bouton_stop.grid(column=2, row=3)
+        self.bouton_stop.grid(column=2, row=3)
         
         self.bouton_start= ttk.Button(self, text="Start", command = self.start)
-        #self.bouton_start.grid(column=1, row=3)
+        self.bouton_start.grid(column=1, row=3)
         
         self.bouton_blackout= ttk.Button(self, text="Blackout", command = self.blackout)
-        #self.bouton_blackout.grid(column=3, row=3)
+        self.bouton_blackout.grid(column=3, row=3)
         
         self.bouton_rand= ttk.Button(self, text="Random", command = self.rand_light)
-        #self.bouton_rand.grid(column=4, row=3)
+        self.bouton_rand.grid(column=4, row=3)
         
         self.bouton_strobe= ttk.Button(self, text="Strobe", command = self.strobe)
-        #self.bouton_strobe.grid(column=5, row=3)
+        self.bouton_strobe.grid(column=5, row=3)
         
         self.bouton_rand= ttk.Button(self, text="Connection", command = self.connection)
-        #self.bouton_rand.grid(column=0, row=4)
+        self.bouton_rand.grid(column=0, row=4)
         
         self.bouton_color= ttk.Button(self, text="Color", command = self.ask_color)
-        #self.bouton_color.grid(column=1, row=2)
+        self.bouton_color.grid(column=1, row=2)
         
         #self.thread_rand()
     def connection(self):
