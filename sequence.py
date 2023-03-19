@@ -27,7 +27,7 @@ class SequenceTab(ttk.Frame):
         #self.mydmx= pydmxIcare.DMX_Icare()
         
     def creer_widgets(self):
-            wrapper1 = tk.LabelFrame(self,text="Sequence")
+            wrapper1 = ttk.LabelFrame(self,text="Sequence")
             wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
             self.trv=ttk.Treeview(wrapper1,columns=(1,2,3,4))
             style = ttk.Style(self.trv)
@@ -38,21 +38,21 @@ class SequenceTab(ttk.Frame):
             xscroll=ttk.Scrollbar(wrapper1,orient="horizontal",command=self.trv.xview)
             xscroll.pack(side="bottom", fill="x")
             
-            wrapper2 = tk.LabelFrame(self,text="Command")
+            wrapper2 = ttk.LabelFrame(self,text="Command")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
-            self.titles={'Line': ["1","2","3","4","5","6","7","8",'9','10','11','12','13'],\
-                    'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2",'','','','',''],\
-                    'ParLED1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED2':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED3':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED4':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED5':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED6':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED7':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED8':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'ParLED9':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'Strobe1':['','', '', '', '', '', '', '', '', '', '', '', ''],\
-                    'Strobe2':['','', '', '', '', '', '', '', '', '', '', '', '']}
+            self.titles={'Line': ["1","2","3","4","5","6","7","8"],\
+                    'Structure': ["Intro_x4","Intro_x4","Intro_x4","Intro_x4","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2","Couplet1_A_x2"],\
+                    'ParLED1':['','', '', '', '', '', '', ''],\
+                    'ParLED2':['','', '', '', '', '', '', ''],\
+                    'ParLED3':['','', '', '', '', '', '', ''],\
+                    'ParLED4':['','', '', '', '', '', '', ''],\
+                    'ParLED5':['','', '', '', '', '', '', ''],\
+                    'ParLED6':['','', '', '', '', '', '', ''],\
+                    'ParLED7':['','', '', '', '', '', '', ''],\
+                    'ParLED8':['','', '', '', '', '', '', ''],\
+                    'ParLED9':['','', '', '', '', '', '', ''],\
+                    'Strobe1':['','', '', '', '', '', '', ''],\
+                    'Strobe2':['','', '', '', '', '', '', '']}
             self.trv["columns"] = list(x for x in range(len(list(self.titles.keys()))))
             self.trv['show'] = 'headings'
             for x, y in enumerate(self.titles.keys()):
@@ -83,27 +83,44 @@ class SequenceTab(ttk.Frame):
             self.cb1 = ttk.Combobox(wrapper2, values=self.list_group,width=20,textvariable=sel)
             self.cb1.grid(row=0,column=5)
             
-            self.l1=tk.Label(wrapper2,text='#Line')
+            self.l1=ttk.Label(wrapper2,text='#Line : ')
             self.l1.grid(row=0,column=6)
-            self.e1=tk.Entry(wrapper2,width=10)
+            self.e1=ttk.Entry(wrapper2,width=10)
             self.e1.grid(row=0,column=7)
             
-            self.l2=tk.Label(wrapper2,text='#tps')
-            self.l2.grid(row=0,column=8)
-            self.e2=tk.Entry(wrapper2,width=10)
-            self.e2.grid(row=0,column=9)
+            self.l2=ttk.Label(wrapper2,text='#tps : ')
+            self.l2.grid(row=1,column=6)
+            self.e2=ttk.Entry(wrapper2,width=10)
+            self.e2.grid(row=1,column=7)
             
-            self.l3=tk.Label(wrapper2,text='Freq')
-            self.l3.grid(row=0,column=10)
-            self.e3=tk.Entry(wrapper2,width=10)
-            self.e3.grid(row=0,column=11)
+            self.l3=ttk.Label(wrapper2,text='Freq : ')
+            self.l3.grid(row=2,column=6)
+            self.e3=ttk.Entry(wrapper2,width=10)
+            self.e3.grid(row=2,column=7)
             
-            self.l4=tk.Label(wrapper2,text='Amp')
-            self.l4.grid(row=0,column=12)
-            self.e4=tk.Entry(wrapper2,width=10)
-            self.e4.grid(row=0,column=13)
+            self.l4=ttk.Label(wrapper2,text='Amp : ')
+            self.l4.grid(row=3,column=6)
+            self.e4=ttk.Entry(wrapper2,width=10)
+            self.e4.grid(row=3,column=7)
             
     def add_item(self):
+        self.top=tk.Toplevel(self)
+        self.top.title("Add a row")
+        self.ttruct_label= ttk.Label(self.top, text="Structure")
+        self.ttruct_label.grid(row=0,column=0)
+        
+        self.struct_entry= ttk.Entry(self.top, text="Structure")
+        self.struct_entry.grid(row=0,column=0)
+        
+        self.bouton_ok= ttk.Button(self.top, text="ok", command = self.choice)
+        self.bouton_ok.grid(row=1,column=0)
+        
+        
+        
+        
+    def choice(self):
+        self.struct=self.struct_entry.get()
+        self.top.destroy()
         ar=[]
         for line in self.trv.get_children():
             ar_i=[]
@@ -114,8 +131,8 @@ class SequenceTab(ttk.Frame):
         col=(y[:,0])
         
         print(list(col))
-        self.trv.insert("", "end", values=(str(int(list(col)[-1])+1),'', '', '', '', '', '', '', '', '', '', '', ''))
-    
+        self.trv.insert("", "end", values=(str(int(list(col)[-1])+1),self.struct, '', '', '', '', '', '', '', '', '', '', ''))
+        
     def add_columns(self, columns, **kwargs):
         # Preserve current column headers and their settings
         current_columns = list(self.view['columns'])
@@ -198,12 +215,11 @@ class SequenceTab(ttk.Frame):
         output["Header"]={"Structure":self.titles["Structure"]}
         output["Header"]["Tempo"]="60"
         output["Header"]["Modules"]=list(y[0][2:])
-        output["Header"]['Line']=["1","2","3","4","5","6","7","8",'9','10','11','12','13']
+        output["Header"]['Line']=[]
         output["data"]={}
-        for i in range (1,len(output["Header"]['Line'])):
-            if output["Header"]['Line'][i]:
-                
-                output["data"][str(i)]=list(y[i][2:])
+        for i in range (1,len(self.trv.get_children())):
+            output["Header"]['Line'].append(str(i))
+            output["data"][str(i)]={"section":y[i][1],"function":list(y[i][2:])}
         with open("test.json", "w") as write_file:
             json.dump(output, write_file, indent=8)
         

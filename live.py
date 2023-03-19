@@ -17,32 +17,43 @@ class LiveTab(ttk.Frame):
     def creer_widgets(self):
             self.paus=0
             self.pla=0
-            wrapper1 = tk.LabelFrame(self,text="Sequence")
+            self.all_sel=0
+            self.freq=60
+            wrapper1 = ttk.LabelFrame(self,text="Sequence")
             wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
             
-            wrapper_time=tk.LabelFrame(self,text="Time",height=10,width=2000)
-            wrapper_time.pack(fill="both",expand="no",padx=20)
+            wrapper_time=ttk.LabelFrame(self,text="Time",height=10,width=2000)
+            wrapper_time.pack(fill="both",expand="no",padx=10,pady=10)
             
             self.progress_bar=ttk.Progressbar(wrapper_time, orient='horizontal', length=1800)
             self.progress_bar.pack(padx=10,pady=10)
             
-            wrapper2 = tk.LabelFrame(self,text="Player")
+            wrapper2 = ttk.LabelFrame(self,text="Player")
             wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
             
-            wrapper3 = tk.LabelFrame(wrapper2,text="Control")
-            wrapper3.grid(column=0, row=0)
+            wrapper3 = ttk.LabelFrame(wrapper2,text="Control")
+            wrapper3.grid(column=0, row=0,padx=10,pady=10)
+            wrapper5 = ttk.LabelFrame(wrapper1,text="Parameters")
+            wrapper5.grid(column=4, row=1)            
             
+            self.freq_label=ttk.Label(wrapper5,text='Frequence : ')
+            self.freq_label.grid(column=0, row=0,padx=5,pady=5)
+            self.freq_entry=ttk.Entry(wrapper5)
+            self.freq_entry.grid(column=1, row=0,padx=5,pady=5)
             
-            self.freq_label=ttk.Label(wrapper1,text='Frequence : ')
-            self.freq_label.grid(column=1, row=0,padx=5,pady=5)
-            self.freq_entry=ttk.Entry(wrapper1)
-            self.freq_entry.grid(column=2, row=0,padx=5,pady=5)
+            self.amp_label=ttk.Label(wrapper5,text='Amplitude : ')
+            self.amp_label.grid(column=0, row=1,padx=5,pady=5)
+            self.amp_label=ttk.Entry(wrapper5)
+            self.amp_label.grid(column=1, row=1,padx=5,pady=5)
             
-            self.bouton_enable= ttk.Button(wrapper1, text="Select module", command = self.enable)
-            self.bouton_enable.grid(column=3, row=0,padx=5,pady=5) 
+            self.bouton_load_song= ttk.Button(wrapper1, text="Load song", command = self.load_song)
+            self.bouton_load_song.grid(column=1, row=0,padx=5,pady=5)
             
-            self.bouton_allselect= ttk.Button(wrapper1, text="All select", command = self.allselect)
-            self.bouton_allselect.grid(column=4, row=0,padx=5,pady=5)            
+            self.bouton_enable= ttk.Button(wrapper1, text="Select/Unselect module", command = self.enable)
+            self.bouton_enable.grid(column=2, row=0,padx=5,pady=5) 
+            
+            self.bouton_allselect= ttk.Button(wrapper1, text="Select all", command = self.allselect)
+            self.bouton_allselect.grid(column=3, row=0,padx=5,pady=5)            
             
             self.bouton_play= ttk.Button(wrapper3, text="     "+f'{emoji.emojize(":play_button:")}', command = self.threading)
             self.bouton_play.grid(column=0, row=0,padx=5,pady=5)
@@ -59,22 +70,29 @@ class LiveTab(ttk.Frame):
             self.bouton_prev= ttk.Button(wrapper3, text=f'{emoji.emojize(":fast_reverse_button:")}',)# command = self.strobe)
             self.bouton_prev.grid(column=0, row=1,padx=5,pady=5)
             
-            self.bouton_load_song= ttk.Button(wrapper3, text="Load song", command = self.load_song)
-            self.bouton_load_song.grid(column=2, row=1,padx=5,pady=5)
-            
-            wrapper4 = tk.LabelFrame(wrapper2,text="Mods")
-            wrapper4.grid(column=1, row=0)
+            wrapper4 = ttk.LabelFrame(wrapper2,text="Mods")
+            wrapper4.grid(column=1, row=0,padx=10,pady=10)
             self.bouton_back= ttk.Button(wrapper4, text="Blackout",)# command = self.strobe)
             self.bouton_back.grid(column=0, row=0,padx=5,pady=5)
             
             self.bouton_back= ttk.Button(wrapper4, text="Solo",)# command = self.strobe)
-            self.bouton_back.grid(column=1, row=0,padx=5,pady=5)
+            self.bouton_back.grid(column=0, row=1,padx=5,pady=5)
             
             self.bouton_back= ttk.Button(wrapper4, text="Random_fondu",)# command = self.strobe)
-            self.bouton_back.grid(column=2, row=0,padx=5,pady=5)
+            self.bouton_back.grid(column=1, row=0,padx=5,pady=5)
+            
+            wrapper6 = ttk.LabelFrame(wrapper2,text="Display")
+            wrapper6.grid(column=2, row=0,padx=10,pady=10)
+            
+            self.section_label=ttk.Label(wrapper6,text='Section : ')
+            self.section_label.grid(column=0, row=0,padx=5,pady=5)
+            
+            self.section_val=ttk.Label(wrapper6,text='         ')
+            self.section_val.grid(column=1, row=0,padx=5,pady=5)
+            
             
             self.trv=ttk.Treeview(wrapper1,selectmode='browse',height=9)
-            self.trv.grid(row=1,column=0,columnspan=5,padx=10,pady=5)
+            self.trv.grid(row=1,column=0,columnspan=2,padx=5,pady=10)
             self.trv["columns"]=("1")
             self.trv['show']='tree headings'
             self.trv.column("#0", width = 20, anchor ='c')
@@ -83,18 +101,20 @@ class LiveTab(ttk.Frame):
             self.trv.heading("1",text="Songs",anchor='w')
 
             self.trv2=ttk.Treeview(wrapper1,selectmode='browse',height=9)
-            self.trv2.grid(row=1,column=6,columnspan=5,padx=10,pady=5)
+            self.trv2.grid(row=1,column=2,columnspan=2,padx=10,pady=5)
             self.trv2["columns"]=("1","2")
             self.trv2['show']='tree headings'
             self.trv2.column("#0", width = 20, anchor ='c')
             self.trv2.column("1",width=20,anchor='c')
             self.trv2.column("2",width=300,anchor='w')
             self.trv2.heading("#0", text ="#")
-            self.trv2.heading("1",text=f'{emoji.emojize(":black_square_button:")}',anchor='c')
+            self.trv2.heading("1",text=f'{emoji.emojize(":check_mark_button:")}',anchor='c')
             self.trv2.heading("2",text="Modules",anchor='w')
             
-            b1=ttk.Button(wrapper1,text='Select directory',command=self.my_fun)
+            b1=ttk.Button(wrapper1,text='Select a song',command=self.my_fun)
             b1.grid(row=0,column=0,padx=5,pady=10)
+            
+            
             
     def my_fun(self): 
         #path = filedialog.askdirectory() # select directory 
@@ -134,7 +154,7 @@ class LiveTab(ttk.Frame):
         list_modules=self.data["Header"]["Modules"]
         i=0
         for module in list_modules:  # list of files 
-            self.trv2.insert("", 'end',iid=i,values =(f'{emoji.emojize(":check_mark_button:")}',module))
+            self.trv2.insert("", 'end',iid=i,values =(f'{emoji.emojize(":black_square_button:")}',module))
             i=i+1
             
     def search(self,query):
@@ -146,7 +166,6 @@ class LiveTab(ttk.Frame):
         self.trv.selection_set(selections)
     
     def threading(self):
-        print("play pressed")
         self.paus=0
         if self.paus==0 and self.pla==0:
             self.pla=1
@@ -157,12 +176,17 @@ class LiveTab(ttk.Frame):
     def play(self):
         le=len(self.data["data"])
         self.i=0
+        if self.freq_entry.get():
+            self.freq=int(self.freq_entry.get())
+            print(self.freq)
         while self.i<le :
             if self.paus==0:
                 self.i+=1
                 self.progress_bar['value']=int(100*(self.i+1)/le)
-                time.sleep(0.4)
-    
+                time.sleep(60/self.freq)
+                sect=self.data["data"][str(self.i)]["section"]
+                self.section_val.configure(text=sect)
+                print(self.freq)
     def pause(self):
         if self.paus==0:
             self.paus=1
@@ -177,11 +201,26 @@ class LiveTab(ttk.Frame):
         self.i=0
 
     def enable(self):
-        curItem = self.trv2.focus()
-        print(self.trv2.item(curItem)["values"][1])
-        
+        curItem = self.trv2.focus()        
         selected_item = self.trv2.selection()[0]
-        self.trv2.item(selected_item, values=(f'{emoji.emojize(":cross_mark_button:")}', self.trv2.item(curItem)["values"][1]))
+        if self.trv2.item(selected_item)['values'][0]==f'{emoji.emojize(":check_mark_button:")}':
         
+            self.trv2.item(selected_item, values=(f'{emoji.emojize(":black_square_button:")}', self.trv2.item(curItem)["values"][1]))
+        else :
+            self.trv2.item(selected_item, values=(f'{emoji.emojize(":check_mark_button:")}', self.trv2.item(curItem)["values"][1]))
+            
     def allselect(self):
         print('all select')
+        item_count = len (self.trv2.get_children())
+        if self.all_sel==0:
+            for i in range(item_count):
+                self.trv2.item(i, values=(f'{emoji.emojize(":check_mark_button:")}', self.trv2.item(i)["values"][1]))
+                self.all_sel=1
+                self.bouton_allselect.configure(text="Unselect all")
+                
+        else:
+            for i in range(item_count):
+                self.trv2.item(i, values=(f'{emoji.emojize(":black_square_button:")}', self.trv2.item(i)["values"][1]))
+                self.all_sel=0
+                self.bouton_allselect.configure(text="Select all")
+                
