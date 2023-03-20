@@ -13,7 +13,6 @@ class LiveTab(ttk.Frame):
         ttk.Frame.__init__(self)
         self.creer_widgets()
     
-    
     def creer_widgets(self):
             self.paus=0
             self.pla=0
@@ -93,13 +92,16 @@ class LiveTab(ttk.Frame):
             
             self.trv=ttk.Treeview(wrapper1,selectmode='browse',height=9)
             self.trv.grid(row=1,column=0,columnspan=2,padx=5,pady=10)
-            self.trv["columns"]=("1")
+            self.trv["columns"]=("1","2")
             self.trv['show']='tree headings'
             self.trv.column("#0", width = 20, anchor ='c')
-            self.trv.column("1",width=300,anchor='w')
-            self.trv.heading("#0", text ="#")
-            self.trv.heading("1",text="Songs",anchor='w')
-
+            self.trv.column("1",width=20,anchor='w')
+            self.trv.column("2",width=300,anchor='w')
+            self.trv.heading("#0", text ="")
+            self.trv.heading("1",text="#",anchor='w')
+            self.trv.heading("2",text="Songs",anchor='w')
+            
+            
             self.trv2=ttk.Treeview(wrapper1,selectmode='browse',height=9)
             self.trv2.grid(row=1,column=2,columnspan=2,padx=10,pady=5)
             self.trv2["columns"]=("1","2")
@@ -107,7 +109,7 @@ class LiveTab(ttk.Frame):
             self.trv2.column("#0", width = 20, anchor ='c')
             self.trv2.column("1",width=20,anchor='c')
             self.trv2.column("2",width=300,anchor='w')
-            self.trv2.heading("#0", text ="#")
+            self.trv2.heading("#0", text ="")
             self.trv2.heading("1",text=f'{emoji.emojize(":check_mark_button:")}',anchor='c')
             self.trv2.heading("2",text="Modules",anchor='w')
             
@@ -135,20 +137,18 @@ class LiveTab(ttk.Frame):
             files2=next(os.walk(path2))[2] # file list of Sub directory 
             for f2 in files2:  # list of files 
                 print(f2)
-                self.trv.insert(i, 'end',iid='sub'+str(f2i),values ="-" + f2)
+                self.trv.insert(i, 'end',iid='sub'+str(f2i),values=(f2i,f2))
                 f2i=f2i+1
             i=i+1
-        
-
         for f in files:  # list of files 
-            self.trv.insert("", 'end',iid=i,values =f[:-5])
+            self.trv.insert("", 'end',iid=i,values =(i,f[:-5]))
             i=i+1
         le=len(os.path.split(self.file)[0])
         self.search(self.file[le+1:-5])
         
     def load_song(self):
         curItem = self.trv.focus()
-        file=self.path+'/'+self.trv.item(curItem)["values"][0]+'.json'
+        file=self.path+'/'+self.trv.item(curItem)["values"][1]+'.json'
         with open(file) as json_file:
             self.data = json.load(json_file)
         list_modules=self.data["Header"]["Modules"]
@@ -175,22 +175,21 @@ class LiveTab(ttk.Frame):
         
     def play(self):
         le=len(self.data["data"])
-        self.i=0
+        self.i=1
         if self.freq_entry.get():
             self.freq=int(self.freq_entry.get())
             print(self.freq)
-        while self.i<le :
+        while self.i<le+1 :
             if self.paus==0:
-                self.i+=1
-                self.progress_bar['value']=int(100*(self.i+1)/le)
-                time.sleep(60/self.freq)
                 sect=self.data["data"][str(self.i)]["section"]
+                self.progress_bar['value']=int(100*(self.i)/le)
                 self.section_val.configure(text=sect)
-                print(self.freq)
+                self.i+=1
+                time.sleep(60/self.freq)
+                
     def pause(self):
         if self.paus==0:
             self.paus=1
-            
         else :
             self.paus=0
     
@@ -210,7 +209,6 @@ class LiveTab(ttk.Frame):
             self.trv2.item(selected_item, values=(f'{emoji.emojize(":check_mark_button:")}', self.trv2.item(curItem)["values"][1]))
             
     def allselect(self):
-        print('all select')
         item_count = len (self.trv2.get_children())
         if self.all_sel==0:
             for i in range(item_count):
