@@ -10,7 +10,7 @@ from scipy import signal
 hop_length = 256
 
 n_fft=2**12
-input_file = '8 shotgun.wav'
+input_file = '8_shotgun.wav'
 output_file = 'G53-41101-1111-00002.wav'
 
 x, sr = librosa.load(input_file,duration=2)#offset=7, duration=0.5
