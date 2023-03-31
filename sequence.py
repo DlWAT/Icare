@@ -115,9 +115,7 @@ class SequenceTab(ttk.Frame):
         self.bouton_ok= ttk.Button(self.top, text="ok", command = self.choice)
         self.bouton_ok.grid(row=1,column=0)
         
-        
-        
-        
+       
     def choice(self):
         self.struct=self.struct_entry.get()
         self.top.destroy()
