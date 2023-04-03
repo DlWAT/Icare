@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 import ExperimentTab
 import sequence
 import live
+import recorder
 class Application(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
@@ -13,10 +14,12 @@ class Application(tk.Tk):
         self.tab2 = ExperimentTab.ExperimentTab()
         self.tab3 = sequence.SequenceTab()
         self.tab4 = live.LiveTab()
+        self.tab5 = recorder.RecorderTab()
         #tabControl.add(self.tab1, text='Home')
         tabControl.add(self.tab2, text='Direct') 
         tabControl.add(self.tab3, text='Sequence') 
         tabControl.add(self.tab4, text='Live') 
+        tabControl.add(self.tab5, text='Record') 
         tabControl.pack(expand=1, fill="both")
         
         self.tk.call("source", "Azure-ttk-theme-main/azure.tcl")
