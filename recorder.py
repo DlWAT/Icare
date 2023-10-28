@@ -8,7 +8,7 @@ import emoji
 import os 
 from tkinter import filedialog
 import time
-class LiveTab(ttk.Frame):
+class RecorderTab(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
         self.creer_widgets()
@@ -21,100 +21,32 @@ class LiveTab(ttk.Frame):
             wrapper1 = ttk.LabelFrame(self,text="Sequence")
             wrapper1.pack(fill="both",expand="yes",padx=20,pady=10)
             
+            wrapper2 = ttk.LabelFrame(self,text="Controls")
+            wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
             wrapper_time=ttk.LabelFrame(self,text="Time",height=10,width=2000)
             wrapper_time.pack(fill="both",expand="no",padx=10,pady=10)
             
             self.progress_bar=ttk.Progressbar(wrapper_time, orient='horizontal', length=1800)
             self.progress_bar.pack(padx=10,pady=10)
             
-            wrapper2 = ttk.LabelFrame(self,text="Player")
-            wrapper2.pack(fill="both",expand="yes",padx=20,pady=10)
-            
-            wrapper3 = ttk.LabelFrame(wrapper2,text="Control")
-            wrapper3.grid(column=0, row=0,padx=10,pady=10)
-            wrapper5 = ttk.LabelFrame(wrapper1,text="Parameters")
-            wrapper5.grid(column=4, row=1)            
-            
-            self.freq_label=ttk.Label(wrapper5,text='Frequence : ')
-            self.freq_label.grid(column=0, row=0,padx=5,pady=5)
-            self.freq_entry=ttk.Entry(wrapper5)
-            self.freq_entry.grid(column=1, row=0,padx=5,pady=5)
-            
-            self.amp_label=ttk.Label(wrapper5,text='Amplitude : ')
-            self.amp_label.grid(column=0, row=1,padx=5,pady=5)
-            self.amp_label=ttk.Entry(wrapper5)
-            self.amp_label.grid(column=1, row=1,padx=5,pady=5)
-            
             self.bouton_load_song= ttk.Button(wrapper1, text="Load song", command = self.load_song)
-            self.bouton_load_song.grid(column=1, row=0,padx=5,pady=5)
+            self.bouton_load_song.grid(column=1, row=0,padx=5,pady=5)        
             
-            self.bouton_enable= ttk.Button(wrapper1, text="Select/Unselect module", command = self.enable)
-            self.bouton_enable.grid(column=2, row=0,padx=5,pady=5) 
-            
-            self.bouton_allselect= ttk.Button(wrapper1, text="Select all", command = self.allselect)
-            self.bouton_allselect.grid(column=3, row=0,padx=5,pady=5)            
-            
-            self.bouton_play= ttk.Button(wrapper3, text="     "+f'{emoji.emojize(":play_button:")}', command = self.threading)
+            self.bouton_play= ttk.Button(wrapper2, text="     "+f'{emoji.emojize(":play_button:")}', command = self.threading)
             self.bouton_play.grid(column=0, row=0,padx=5,pady=5)
             
-            self.bouton_pause= ttk.Button(wrapper3, text=f'{emoji.emojize(":pause_button:")}', command = self.pause)
+            self.bouton_pause= ttk.Button(wrapper2, text=f'{emoji.emojize(":pause_button:")}', command = self.pause)
             self.bouton_pause.grid(column=1, row=0,padx=5,pady=5)
             
-            self.bouton_stop= ttk.Button(wrapper3, text=f'{emoji.emojize(":stop_button:")}', command = self.stop)
+            self.bouton_stop= ttk.Button(wrapper2, text=f'{emoji.emojize(":stop_button:")}', command = self.stop)
             self.bouton_stop.grid(column=2, row=0,padx=5,pady=5)
             
-            self.bouton_next= ttk.Button(wrapper3, text=f'{emoji.emojize(":fast-forward_button:")}',)# command = self.strobe)
+            self.bouton_next= ttk.Button(wrapper2, text=f'{emoji.emojize(":fast-forward_button:")}',)# command = self.strobe)
             self.bouton_next.grid(column=1, row=1,padx=5,pady=5)
             
-            self.bouton_prev= ttk.Button(wrapper3, text=f'{emoji.emojize(":fast_reverse_button:")}',)# command = self.strobe)
+            self.bouton_prev= ttk.Button(wrapper2, text=f'{emoji.emojize(":fast_reverse_button:")}',)# command = self.strobe)
             self.bouton_prev.grid(column=0, row=1,padx=5,pady=5)
             
-            wrapper4 = ttk.LabelFrame(wrapper2,text="Mods")
-            wrapper4.grid(column=1, row=0,padx=10,pady=10)
-            self.bouton_back= ttk.Button(wrapper4, text="Blackout",)# command = self.strobe)
-            self.bouton_back.grid(column=0, row=0,padx=5,pady=5)
-            
-            self.bouton_back= ttk.Button(wrapper4, text="Solo",)# command = self.strobe)
-            self.bouton_back.grid(column=0, row=1,padx=5,pady=5)
-            
-            self.bouton_back= ttk.Button(wrapper4, text="Random_fondu",)# command = self.strobe)
-            self.bouton_back.grid(column=1, row=0,padx=5,pady=5)
-            
-            wrapper6 = ttk.LabelFrame(wrapper2,text="Display")
-            wrapper6.grid(column=2, row=0,padx=10,pady=10)
-            
-            self.section_label=ttk.Label(wrapper6,text='Section : ')
-            self.section_label.grid(column=0, row=0,padx=5,pady=5)
-            
-            self.section_val=ttk.Label(wrapper6,text='         ')
-            self.section_val.grid(column=1, row=0,padx=5,pady=5)
-            
-            
-            self.trv=ttk.Treeview(wrapper1,selectmode='browse',height=9)
-            self.trv.grid(row=1,column=0,columnspan=2,padx=5,pady=10)
-            self.trv["columns"]=("1","2")
-            self.trv['show']='tree headings'
-            self.trv.column("#0", width = 20, anchor ='c')
-            self.trv.column("1",width=20,anchor='w')
-            self.trv.column("2",width=300,anchor='w')
-            self.trv.heading("#0", text ="")
-            self.trv.heading("1",text="#",anchor='w')
-            self.trv.heading("2",text="Songs",anchor='w')
-            
-            
-            self.trv2=ttk.Treeview(wrapper1,selectmode='browse',height=9)
-            self.trv2.grid(row=1,column=2,columnspan=2,padx=10,pady=5)
-            self.trv2["columns"]=("1","2")
-            self.trv2['show']='tree headings'
-            self.trv2.column("#0", width = 20, anchor ='c')
-            self.trv2.column("1",width=20,anchor='c')
-            self.trv2.column("2",width=300,anchor='w')
-            self.trv2.heading("#0", text ="")
-            self.trv2.heading("1",text=f'{emoji.emojize(":check_mark_button:")}',anchor='c')
-            self.trv2.heading("2",text="Modules",anchor='w')
-            
-            b1=ttk.Button(wrapper1,text='Select a song',command=self.my_fun)
-            b1.grid(row=0,column=0,padx=5,pady=10)
             
             
             
