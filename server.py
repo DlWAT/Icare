@@ -7,6 +7,7 @@ msgToSend = str.encode(msgClient)
 addrPort = ("192.168.1.43", 9999)
 bufferSize = 1024
 
+
 # Créer un socket UDP coté client
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 Lx=[]
