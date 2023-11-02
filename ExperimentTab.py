@@ -21,7 +21,7 @@ class ExperimentTab(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
         self.creer_widgets()
-        self.par_led1=pydmxlight.Par_Led_615_AFX(5,0)
+        self.par_led1=pydmxlight.Par_Led_615_AFX(15,0)
         self.mydmx= pydmxIcare.DMX_Icare()
         
     def creer_widgets(self):
@@ -92,33 +92,52 @@ class ExperimentTab(ttk.Frame):
         self.amp.grid(column=5, row=1)
         self.amp_label_value.grid(column=5, row=2)
         
-        self.shuffle = tk.Scale(self, from_=90, to=10, orient='vertical',label="Shuffle")
-        #self.shuffle.grid(column=6, row=1)
+        self.shuffle = tk.Scale(wrapper2, from_=90, to=10, orient='vertical',label="Shuffle")
+        self.shuffle.grid(column=6, row=1)
         
-        self.canvas = tk.Canvas(self, width = 500, height = 500)
+        
+        self.range_pan_label=ttk.Label(wrapper2, text="Pan")
+        slider_pan = tk.StringVar()
+        slider_pan.set('0')
+        self.range_pan = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_pan.set('%d' % float(s)))
+        self.range_pan_label_value=ttk.Label(wrapper2, textvariable=slider_pan)
+        self.range_pan_label.grid(column=7, row=0)
+        self.range_pan.grid(column=7, row=1)
+        self.range_pan_label_value.grid(column=7, row=2)
+        
+        self.range_tilt_label=ttk.Label(wrapper2, text="Tilt")
+        slider_tilt = tk.StringVar()
+        slider_tilt.set('0')
+        self.range_tilt = ttk.Scale(wrapper2, from_=255, to=0, orient='vertical', command=lambda s:slider_tilt.set('%d' % float(s)))
+        self.range_tilt_label_value=ttk.Label(wrapper2, textvariable=slider_tilt)
+        self.range_tilt_label.grid(column=8, row=0)
+        self.range_tilt.grid(column=8, row=1)
+        self.range_tilt_label_value.grid(column=8, row=2)
+        
+        self.canvas = tk.Canvas(wrapper2, width = 500, height = 500)
         self.rectangle=self.canvas.create_rectangle(50, 110,300,280, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()) +"""""")
-        #self.canvas.grid(column=0, row=2)
+        self.canvas.grid(column=0, row=2)
 
-        self.bouton_stop= ttk.Button(self, text="Stop", command = self.stop)
-        #self.bouton_stop.grid(column=2, row=3)
+        self.bouton_stop= ttk.Button(wrapper1, text="Stop", command = self.stop)
+        self.bouton_stop.grid(column=2, row=3)
         
-        self.bouton_start= ttk.Button(self, text="Start", command = self.start)
-        #self.bouton_start.grid(column=1, row=3)
+        self.bouton_start= ttk.Button(wrapper1, text="Start", command = self.start)
+        self.bouton_start.grid(column=1, row=3)
         
-        self.bouton_blackout= ttk.Button(self, text="Blackout", command = self.blackout)
-        #self.bouton_blackout.grid(column=3, row=3)
+        self.bouton_blackout= ttk.Button(wrapper1, text="Blackout", command = self.blackout)
+        self.bouton_blackout.grid(column=3, row=3)
         
-        self.bouton_rand= ttk.Button(self, text="Random", command = self.rand_light)
-        #self.bouton_rand.grid(column=4, row=3)
+        self.bouton_rand= ttk.Button(wrapper1, text="Random", command = self.rand_light)
+        self.bouton_rand.grid(column=4, row=3)
         
-        self.bouton_strobe= ttk.Button(self, text="Strobe", command = self.strobe)
-        #self.bouton_strobe.grid(column=5, row=3)
+        self.bouton_strobe= ttk.Button(wrapper1, text="Strobe", command = self.strobe)
+        self.bouton_strobe.grid(column=5, row=3)
         
-        self.bouton_rand= ttk.Button(self, text="Connection", command = self.connection)
-        #self.bouton_rand.grid(column=0, row=4)
+        self.bouton_rand= ttk.Button(wrapper1, text="Connection", command = self.connection)
+        self.bouton_rand.grid(column=0, row=4)
         
-        self.bouton_color= ttk.Button(self, text="Color", command = self.ask_color)
-        #self.bouton_color.grid(column=1, row=2)
+        self.bouton_color= ttk.Button(wrapper1, text="Color", command = self.ask_color)
+        self.bouton_color.grid(column=1, row=2)
         
         #self.thread_rand()
     def connection(self):
@@ -140,34 +159,43 @@ class ExperimentTab(ttk.Frame):
     def change_color(self):
         while True :
             if self.enable:
-                self.max=self.amp.get()
-                self.canvas.itemconfig(self.rectangle, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()))
-                self.mydmx.set_channel(0,self.range_rouge.get())
-                self.mydmx.set_channel(1,self.range_vert.get())
-                self.mydmx.set_channel(2,self.range_bleu.get())
+                self.max=int(self.amp.get()+1)
+                self.canvas.itemconfig(self.rectangle, fill=""""""+rgb_to_hex(int(self.range_rouge.get()), int(self.range_vert.get()),int(self.range_bleu.get())))
+                self.mydmx.set_channel(0,255)
+                self.mydmx.set_channel(8,0)
+                
+                self.mydmx.set_channel(1,int(self.amp.get()))
+                
+                self.mydmx.set_channel(9,int(self.range_rouge.get()))
+                self.mydmx.set_channel(10,int(self.range_vert.get()))
+                self.mydmx.set_channel(11,int(self.range_bleu.get()))
+                
+                self.mydmx.set_channel(3,int(self.range_pan.get()))
+                self.mydmx.set_channel(5,int(self.range_tilt.get()))
+                #self.mydmx.set_channel(11,int(self.range_bleu.get()))
                 self.mydmx.send_data()
                 #self.max=self.amp.get()
             if self.enable_rand:
-                self.range_rouge.set(random.randint(1,self.max),)
-                self.range_vert.set(random.randint(1,self.max))
-                self.range_bleu.set(random.randint(1,self.max))
-                time.sleep(round(60*1/self.freq.get(),3))
+                self.mydmx.set_channel(9,int(self.range_rouge.get()))
+                self.mydmx.set_channel(10,int(self.range_vert.get()))
+                self.mydmx.set_channel(11,int(self.range_bleu.get()))
+                time.sleep(round(60*1/(self.freq.get()+1),3))
             
             if self.enable_strobe:
                 
-                self.mydmx.set_channel(0,self.range_rouge.get())
-                self.mydmx.set_channel(1,self.range_vert.get())
-                self.mydmx.set_channel(2,self.range_bleu.get())
+                self.mydmx.set_channel(9,int(self.range_rouge.get()))
+                self.mydmx.set_channel(10,int(self.range_vert.get()))
+                self.mydmx.set_channel(11,int(self.range_bleu.get()))
                 #self.mydmx.set_data(self.par_led1.data,5,5)
                 self.mydmx.send_data()
                 time.sleep(round(60*1/self.freq.get()*(self.shuffle.get()/100),3))
                 
-                self.mydmx.set_channel(0,0)
-                self.mydmx.set_channel(1,0)
-                self.mydmx.set_channel(2,0)
+                self.mydmx.set_channel(9,int(self.range_rouge.get()))
+                self.mydmx.set_channel(10,int(self.range_vert.get()))
+                self.mydmx.set_channel(11,int(self.range_bleu.get()))
                 #self.mydmx.set_data(self.par_led1.data,5,5)
                 self.mydmx.send_data()
-                time.sleep(round(60*1/self.freq.get()*(1-self.shuffle.get()/100),3))
+                time.sleep(round(60*1/(self.freq.get()+1)*(1-self.shuffle.get()/100),3))
                 
      
     def threading(self):
@@ -199,12 +227,12 @@ class ExperimentTab(ttk.Frame):
         self.range_vert.set(0)
         self.range_bleu.set(0)
         for i in range (7):
-            self.mydmx.set_channel(16*i+0,0)
-            self.mydmx.set_channel(16*i+1,0)
-            self.mydmx.set_channel(16*i+2,0)
+            self.mydmx.set_channel(10*i+0,0)
+            self.mydmx.set_channel(10*i+1,0)
+            self.mydmx.set_channel(10*i+2,0)
         #self.mydmx.set_data(self.par_led1.data,5,5)
         self.mydmx.send_data()
-        self.canvas.itemconfig(self.rectangle, fill=""""""+rgb_to_hex(self.range_rouge.get(), self.range_vert.get(),self.range_bleu.get()))
+        self.canvas.itemconfig(self.rectangle, fill=""""""+rgb_to_hex(int(self.range_rouge.get()), int(self.range_vert.get()),int(self.range_bleu.get())))
         
     def newgroup(self):
         print("new group")
