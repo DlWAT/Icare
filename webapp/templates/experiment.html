@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Direct</h1>
+  <div class="row row-split">
+    <div class="col-left">
+      <div class="row row-split">
+        <div class="stack" style="flex: 1 1 520px;">
+          <div class="panel">
+            <h3>Connexion</h3>
+            <div class="row">
+              <label>Canal de base (R)
+                <input type="number" id="input-conn-channel" min="1" step="1" value="9" />
+              </label>
+              <button id="btn-connect">Connexion DMX</button>
+              <button id="btn-update-base">Mettre à jour canal de base</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Paramètres</h3>
+            <div class="row row-split">
+              <div class="panel-sub panel-sub-slim">
+                <h4>Couleur & Intensité</h4>
+                <div class="controls">
+                  <label>Rouge
+                    <input type="range" id="range-r" min="0" max="255" value="0" />
+                  </label>
+                  <label>Vert
+                    <input type="range" id="range-g" min="0" max="255" value="0" />
+                  </label>
+                  <label>Bleu
+                    <input type="range" id="range-b" min="0" max="255" value="0" />
+                  </label>
+                  <label>Amplitude
+                    <input type="range" id="range-amp" min="0" max="255" value="0" />
+                  </label>
+                  <label>Couleur
+                    <input type="color" id="color-picker" value="#000000" />
+                  </label>
+                </div>
+                <div class="preview">
+                  <div id="color-preview"></div>
+                </div>
+              </div>
+              <div class="panel-sub panel-sub-slim">
+                <h4>Position & Orientation</h4>
+                <div class="controls">
+                  <label>Pan
+                    <input type="range" id="range-pan" min="0" max="255" value="0" />
+                  </label>
+                  <label>Tilt
+                    <input type="range" id="range-tilt" min="0" max="255" value="0" />
+                  </label>
+                  <label>Angle du faisceau (°)
+                    <input type="range" id="direct-angle" min="10" max="90" value="45" />
+                  </label>
+                  <label>Position X
+                    <input type="range" id="direct-x" min="-6" max="6" value="0" step="0.1" />
+                  </label>
+                  <label>Position Z
+                    <input type="range" id="direct-z" min="-3" max="3" value="0" step="0.1" />
+                  </label>
+                  <label>Hauteur Y
+                    <input type="range" id="direct-y" min="2" max="6" value="4" step="0.1" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack" style="flex: 1 1 360px;">
+          <div class="panel">
+            <h3>Modes</h3>
+            <div class="row">
+              <button id="btn-blackout" class="btn-danger">Blackout</button>
+            </div>
+            <div class="panel-sub">
+              <h4>Couleurs aléatoires</h4>
+              <div class="row">
+                <label>Fréquence (Hz)
+                  <input type="number" id="input-rand-freq" min="0.1" step="0.1" value="1" />
+                </label>
+                <label>Lissage (%)
+                  <input type="range" id="input-rand-smooth" min="0" max="100" step="1" value="50" />
+                </label>
+                <label>Luminosité (0-255)
+                  <input type="number" id="input-rand-bright" min="0" max="255" step="1" value="128" />
+                </label>
+              </div>
+              <div class="row">
+                <button id="btn-rand-start" class="btn-primary">Activer Couleurs Aléatoires</button>
+                <button id="btn-rand-stop">Arrêter</button>
+              </div>
+            </div>
+            <div class="panel-sub">
+              <h4>Effet Strobe (overlay)</h4>
+              <div class="row">
+                <label>Fréquence (Hz)
+                  <input type="number" id="input-ov-freq" min="0.1" step="0.1" value="10" />
+                </label>
+                <label>Rapport cyclique (%)
+                  <input type="number" id="input-ov-duty" min="0" max="100" step="1" value="50" />
+                </label>
+                <label>Canal DMX
+                  <input type="number" id="input-ov-channel" min="0" step="1" value="0" />
+                </label>
+                <label>Durée (s)
+                  <input type="number" id="input-ov-duration" min="0" step="0.1" value="5" />
+                </label>
+              </div>
+              <div class="row">
+                <button id="btn-strobe-overlay">Appliquer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right col-right-wide">
+      <div class="panel" style="height:100%;">
+        <h3>Visualisation 3D</h3>
+        <div id="direct3d" style="width:100%; height:600px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+{% endblock %}

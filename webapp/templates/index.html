@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Bienvenue sur Icare Web</h1>
+  <p>Contrôlez vos modules DMX depuis une interface web.</p>
+  <div class="cards">
+    <a class="card" href="/experiment">
+      <h2>Direct</h2>
+      <p>Réglages immédiats (couleurs, pan/tilt, amplitude).</p>
+    </a>
+    <div class="card disabled">
+      <h2>Séquence (bientôt)</h2>
+      <p>Créez et enregistrez des séquences.</p>
+    </div>
+    <div class="card disabled">
+      <h2>Live (bientôt)</h2>
+      <p>Lecture avec progression et sélection de modules.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

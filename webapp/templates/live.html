@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Live</h1>
+  <div class="grid">
+    <div class="panel">
+      <h3>Séquences</h3>
+      <ul id="live-file-list" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>Modules</h3>
+      <div class="row">
+        <button id="btn-live-select-all">Tout sélectionner</button>
+        <button id="btn-live-unselect-all">Tout désélectionner</button>
+      </div>
+      <ul id="live-modules" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>Lecture</h3>
+      <div class="row">
+        <label>Fréquence
+          <input type="number" id="live-freq" min="1" value="60" />
+        </label>
+      </div>
+      <div class="row">
+        <button id="btn-live-play">Play</button>
+        <button id="btn-live-pause">Pause</button>
+        <button id="btn-live-stop">Stop</button>
+        <button id="btn-live-prev">Prev</button>
+        <button id="btn-live-next">Next</button>
+      </div>
+      <div class="progress">
+        <div id="live-progress-bar" class="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="row">
+        <span id="live-section">Section: -</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Visualisation 3D</h3>
+      <div id="live3d" style="width:100%; height:360px;"></div>
+    </div>
+  </div>
+</section>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Séquence</h1>
+  <div class="grid">
+    <div class="panel">
+      <h3>Fichiers</h3>
+      <div class="row">
+        <input type="text" id="seq-save-name" placeholder="Nom du fichier (ex: myshow)" />
+        <button id="btn-seq-save">Sauvegarder</button>
+      </div>
+      <ul id="seq-file-list" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>Édition</h3>
+      <div class="row">
+        <select id="seq-module-select"></select>
+        <input type="number" id="seq-line" placeholder="#Line" min="1" />
+        <input type="number" id="seq-tps" placeholder="#tps" min="1" />
+        <input type="number" id="seq-freq" placeholder="Freq" min="1" />
+        <input type="number" id="seq-amp" placeholder="Amp" min="0" max="255" />
+      </div>
+      <div class="row">
+        <button id="btn-seq-add-row">Ajouter une ligne</button>
+        <button id="btn-seq-uni">Uniform</button>
+        <button id="btn-seq-fondu">Fondu</button>
+        <button id="btn-seq-strobe">Strobe</button>
+      </div>
+      <div class="row">
+        <input type="color" id="seq-color-1" value="#ff0000" />
+        <input type="color" id="seq-color-2" value="#0000ff" />
+      </div>
+      <div class="table-wrap">
+        <table id="seq-table" class="table"></table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
