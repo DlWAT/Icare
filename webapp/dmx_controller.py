@@ -336,6 +336,7 @@ class DMXController:
                     "x": fx.x,
                     "z": fx.z,
                     "angle": fx.angle,
+                    "beamAngle": prof.beam_angle,
                     "values": state,
                 }
             )

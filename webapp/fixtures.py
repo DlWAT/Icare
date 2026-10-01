@@ -61,6 +61,7 @@ class FixtureProfile:
     key: str
     label: str
     channels: tuple[ChannelSpec, ...]
+    beam_angle: float = 25.0  # full beam angle in degrees (0 = no beam)
 
     @property
     def size(self) -> int:
@@ -99,6 +100,7 @@ _register(
             _ch(W, "Blanc"),
             _ch(A, "Ambre"),
         ),
+        beam_angle=30.0,
     )
 )
 
@@ -114,6 +116,7 @@ _register(
             _ch(B, "Bleu"),
             _ch(SOUND, "Sensibilité son"),
         ),
+        beam_angle=75.0,  # large wash
     )
 )
 
@@ -132,6 +135,7 @@ _register(
             _ch(MACRO, "Macro couleur"),
             _ch(COLOR_TEMP, "Température de couleur"),
         ),
+        beam_angle=15.0,  # tight pin spot
     )
 )
 
@@ -144,6 +148,7 @@ _register(
             _ch(FOG_INTERVAL, "Vitesse / intervalle"),
             _ch(FOG_DURATION, "Durée"),
         ),
+        beam_angle=0.0,
     )
 )
 
@@ -253,9 +258,7 @@ def default_patch() -> list[Fixture]:
         )
         addr += PROFILES["cameo_qspot40_9ch"].size
 
-    out.append(
-        Fixture("Fog", "stairville_mfog1500_3ch", addr, group="fx", x=4.5, z=3.2, angle=180.0)
-    )
+    out.append(Fixture("Fog", "stairville_mfog1500_3ch", addr, group="fx", x=0.0, z=1.5, angle=0.0))
     return out
 
 
@@ -337,6 +340,7 @@ def patch_summary(patch: Iterable[Fixture]) -> list[dict[str, Any]]:
                 "x": fx.x,
                 "z": fx.z,
                 "angle": fx.angle,
+                "beamAngle": prof.beam_angle,
             }
         )
     return out
@@ -349,6 +353,7 @@ def profile_catalog() -> list[dict[str, Any]]:
             "key": p.key,
             "label": p.label,
             "size": p.size,
+            "beamAngle": p.beam_angle,
             "channels": [{"fn": c.fn, "label": c.label, "default": c.default} for c in p.channels],
         }
         for p in PROFILES.values()

@@ -1153,7 +1153,10 @@ function setupStage3D() {
   const tex = makeSmokeTexture();
   const smoke = [];
   for (let i = 0; i < 110; i++) {
-    const mat = new THREE.SpriteMaterial({ map: tex, color: 0xd7dbe2, transparent: true, opacity: 0, depthWrite: false });
+    const mat = new THREE.SpriteMaterial({
+      map: tex, color: 0x000000, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    });
     const sp = new THREE.Sprite(mat);
     sp.visible = false;
     scene.add(sp);
@@ -1213,34 +1216,77 @@ function buildStageFixtures(patch) {
   });
   st.fixtures = {};
 
+  const Y = 2.2; // fixtures on stands
+  const L = 9;   // beam reach (metres)
+
   patch.forEach((f) => {
+    const isFog = f.group === 'fx';
+    const y = isFog ? 0.35 : Y;
+
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(0.45, 0.32, 0.45),
       new THREE.MeshStandardMaterial({ color: 0x2b2f37, roughness: 0.7, metalness: 0.2 }),
     );
-    body.position.set(f.x, 0.35, f.z);
+    body.position.set(f.x, y, f.z);
     st.scene.add(body);
 
-    const L = 8;
+    const a = THREE.MathUtils.degToRad(f.angle || 0);
+    const dir = new THREE.Vector3(Math.sin(a), -0.32, Math.cos(a)).normalize();
+
+    const beamDeg = f.beamAngle || 25;
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(beamDeg) / 2);
+    const radius = Math.max(0.12, L * tanHalf);
+
     const beam = new THREE.Mesh(
-      new THREE.ConeGeometry(0.85, L, 20, 1, true),
+      new THREE.ConeGeometry(radius, L, 28, 1, true),
       new THREE.MeshBasicMaterial({
         color: 0xffffff, transparent: true, opacity: 0,
         depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
       }),
     );
     beam.visible = false;
-    st.scene.add(beam);
-
-    const a = THREE.MathUtils.degToRad(f.angle || 0);
-    const dir = new THREE.Vector3(Math.sin(a), -0.5, Math.cos(a)).normalize();
     beam.quaternion.copy(
       new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().negate()),
     );
-    beam.position.set(f.x, 0.5, f.z).addScaledVector(dir, L / 2);
+    const pos = new THREE.Vector3(f.x, y, f.z);
+    beam.position.copy(pos).addScaledVector(dir, L / 2);
+    st.scene.add(beam);
 
-    st.fixtures[f.name] = { body, beam, color: new THREE.Color(0xffffff), isFog: f.group === 'fx' };
+    st.fixtures[f.name] = {
+      body, beam, color: new THREE.Color(0x000000), intensity: 0,
+      pos, dir, tanHalf, length: L, isFog,
+    };
   });
+}
+
+function computeSmokeLight(p, st) {
+  let R = 0;
+  let G = 0;
+  let B = 0;
+  let total = 0;
+  for (const name in st.fixtures) {
+    const fx = st.fixtures[name];
+    if (fx.isFog || !fx.beam.visible || fx.intensity <= 0.01) continue;
+    const vx = p.x - fx.pos.x;
+    const vy = p.y - fx.pos.y;
+    const vz = p.z - fx.pos.z;
+    const t = vx * fx.dir.x + vy * fx.dir.y + vz * fx.dir.z;
+    if (t < 0.2 || t > fx.length) continue;
+    const px = vx - t * fx.dir.x;
+    const py = vy - t * fx.dir.y;
+    const pz = vz - t * fx.dir.z;
+    const r = Math.sqrt(px * px + py * py + pz * pz);
+    const maxR = t * fx.tanHalf;
+    if (r > maxR) continue;
+    const radial = 1 - r / Math.max(0.001, maxR);
+    const axial = 1 - t / fx.length;
+    const contrib = fx.intensity * radial * radial * (0.35 + 0.65 * axial);
+    R += fx.color.r * contrib;
+    G += fx.color.g * contrib;
+    B += fx.color.b * contrib;
+    total += contrib;
+  }
+  return { R, G, B, total };
 }
 
 function updateStage(snap) {
@@ -1270,6 +1316,7 @@ function updateStage(snap) {
     const intensity = base * amount;
 
     fx.color.setRGB(R, G, B);
+    fx.intensity = intensity;
     fx.beam.material.color.copy(fx.color);
     fx.beam.material.opacity = Math.min(0.5, 0.06 + 0.5 * intensity);
     fx.beam.visible = intensity > 0.03;
@@ -1333,9 +1380,19 @@ function stageAnimate() {
     const s = p.size * (1 + t * 2.4);
     p.sprite.scale.set(s, s, 1);
     p.sprite.material.rotation += p.spin * dt * 0.25;
+
+    // Smoke is lit by the beams: colour and opacity come from the light that
+    // actually reaches the particle. Only a very faint natural glow remains.
+    const lit = computeSmokeLight(p.sprite.position, st);
+    if (lit.total > 0.001) {
+      p.sprite.material.color.setRGB(lit.R / lit.total, lit.G / lit.total, lit.B / lit.total);
+    } else {
+      p.sprite.material.color.setRGB(0.55, 0.58, 0.62);
+    }
+    const litAmount = Math.min(1, lit.total);
     const fadeIn = Math.min(1, t * 7);
     const fadeOut = 1 - Math.max(0, (t - 0.35) / 0.65);
-    p.sprite.material.opacity = 0.26 * fadeIn * fadeOut;
+    p.sprite.material.opacity = fadeIn * fadeOut * (0.035 + 0.6 * litAmount);
   });
 
   st.renderer.render(st.scene, st.camera);
