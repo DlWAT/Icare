@@ -17,22 +17,23 @@ qui correspondent au matériel :
 
 \begin{table}[H]
   \centering
-  \begin{tabular}{@{}llp{6.8cm}@{}}
+  \begin{tabular}{@{}llcp{5.4cm}@{}}
     \toprule
-    \textbf{Profil} & \textbf{Canaux} & \textbf{Détail} \\
+    \textbf{Profil} & \textbf{Canaux} & \textbf{Faisceau} & \textbf{Détail} \\
     \midrule
-    \code{rgbwa\_par\_5ch} & 5 & Rouge, Vert, Bleu, Blanc, Ambre. \\
+    \code{rgbwa\_par\_5ch} & 5 & $30\textdegree$ & Rouge, Vert, Bleu, Blanc, Ambre. \\
     \addlinespace
-    \code{wild\_wash\_132\_6ch} & 6 & Intensité, Strobe, Rouge, Vert, Bleu,
-      sensibilité son. \\
+    \code{wild\_wash\_132\_6ch} & 6 & $75\textdegree$ & Intensité, Strobe, Rouge,
+      Vert, Bleu, sensibilité son. \\
     \addlinespace
-    \code{cameo\_qspot40\_9ch} & 9 & Intensité, intensité fine, Strobe, R, G, B,
-      Blanc, macro, température. \\
+    \code{cameo\_qspot40\_9ch} & 9 & $15\textdegree$ & Intensité, intensité fine,
+      Strobe, R, G, B, Blanc, macro, température. \\
     \addlinespace
-    \code{stairville\_mfog1500\_3ch} & 3 & Volume brouillard, intervalle, durée. \\
+    \code{stairville\_mfog1500\_3ch} & 3 & --- & Volume brouillard, intervalle,
+      durée. \\
     \bottomrule
   \end{tabular}
-  \caption{Profils livrés.}
+  \caption{Profils livrés (l'angle de faisceau alimente la simulation 3D).}
 \end{table}
 
 \section{Le patch par défaut}
@@ -211,6 +212,39 @@ Une méthode simple, adaptée au template Ableton du studio :
   \item Réglage fin : le \emph{beat} d'Ableton pourra servir plus tard à caler
         les effets (strobe sur le temps, chenillard à la mesure).
 \end{enumerate}
+
+\chapter{La simulation 3D}
+\label{ch:simulation}
+
+L'onglet \textbf{Show} dessine toute la scène, sans aucun matériel, à partir de
+l'état DMX réel (\api{GET /api/simulation}). On peut ainsi concevoir les looks
+et vérifier le rendu avant la répétition.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item chaque projecteur est placé à sa position \code{(x, z)} et orienté par
+        son \code{angle} ;
+  \item son \textbf{faisceau} a le rayon réel de son profil :
+        $r = d \times \tan(\text{angle}/2)$ --- un PAR ($30\textdegree$) est
+        étroit, un Wild Wash ($75\textdegree$) très large, un Q-Spot
+        ($15\textdegree$) serré ;
+  \item la couleur et l'intensité du faisceau suivent les canaux DMX.
+\end{itemize}
+
+\paragraph{La fumée est éclairée par les lumières.} La fumée n'est pas
+auto-éclairée : chaque particule reçoit la lumière \emph{qui l'atteint
+réellement}. On teste, pour chaque faisceau allumé, si la particule tombe dans
+son cône, puis on accumule contribution radiale et axiale. La couleur et
+l'opacité de la particule en découlent :
+
+\begin{equation*}
+\text{éclairement} = \sum_{\text{feux}} I_f \cdot
+\left(1 - \frac{r}{r_{\max}}\right)^{2} \cdot
+\left(0{,}35 + 0{,}65\,\Big(1 - \frac{d}{L}\Big)\right).
+\end{equation*}
+
+Hors de tout faisceau, il ne reste qu'un \textbf{très léger} voile naturel
+($\approx 3{,}5\,\%$), conformément au rendu réel : sans lumière qui la frappe,
+la fumée est sombre.
 
 \chapter{Architecture logicielle mise à jour}
 \label{ch:archi2}
