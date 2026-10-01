@@ -124,6 +124,44 @@ Les looks sont de simples fichiers JSON dans \file{Looks/}, créés depuis
 l'onglet \textbf{Show} : on choisit un nom, une cible, une couleur et une
 intensité, puis on sauvegarde.
 
+\section{Donner vie à un look}
+
+Un look purement statique devient vite monotone. On peut donc lui adjoindre un
+champ \code{motion} : le moteur fait alors \emph{évoluer} la scène dans le
+temps, image après image (même cadence que la sortie DMX).
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{8.8cm}@{}}
+    \toprule
+    \textbf{Type} & \textbf{Effet} \\
+    \midrule
+    \code{pulse} & Respiration : l'intensité monte et descend régulièrement. \\
+    \code{wave} / \code{chase} & Vague : le même mouvement, mais déphasé selon la
+      position du projecteur --- un chenillard qui traverse la scène. \\
+    \code{hue} & Rotation lente de la teinte (les couleurs défilent). \\
+    \code{flicker} & Scintillement aléatoire, pour un rendu flamme. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Types de mouvement.}
+\end{table}
+
+\code{speed} règle la cadence et \code{amount} l'amplitude (0 = figé,
+1 = pleine). Le moteur module le canal d'intensité, ou les couleurs pour les
+profils qui n'en ont pas.
+
+\begin{lstlisting}[language=json,caption={Un look qui respire en bleu.}]
+{
+  "name": "INTRO",
+  "targets": { "pars": { "r": 0, "g": 40, "b": 255, "dimmer": 120 } },
+  "motion": { "type": "pulse", "speed": 0.25, "amount": 0.4 }
+}
+\end{lstlisting}
+
+Dans l'éditeur de l'onglet Show, un sélecteur \emph{Mouvement} (avec
+\emph{Vitesse} et \emph{Amplitude}) permet de tout régler sans écrire de JSON.
+Les looks de démonstration fournis ont chacun leur mouvement.
+
 \chapter{Le lien avec Ableton Live}
 \label{ch:ableton}
 
