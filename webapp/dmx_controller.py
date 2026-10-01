@@ -317,6 +317,51 @@ class DMXController:
         self._apply(self._compose(strobe=strobe))
 
     # ------------------------------------------------------------------
+    # Simulation snapshot
+    # ------------------------------------------------------------------
+    def snapshot(self) -> dict:
+        """Return the current per-fixture channel values (for the 3D stage)."""
+        values = self._compose()
+        fixtures = []
+        for fx in self.patch:
+            prof = fx.profile_obj
+            state = {
+                ch.fn: int(values.get(fx.address + i, 0)) for i, ch in enumerate(prof.channels)
+            }
+            fixtures.append(
+                {
+                    "name": fx.name,
+                    "group": fx.group,
+                    "profile": fx.profile,
+                    "x": fx.x,
+                    "z": fx.z,
+                    "angle": fx.angle,
+                    "values": state,
+                }
+            )
+        return {
+            "fixtures": fixtures,
+            "fog": dict(self.fog),
+            "master": {
+                "r": self.r,
+                "g": self.g,
+                "b": self.b,
+                "w": self.w,
+                "a": self.a,
+                "amp": self.amp,
+            },
+            "modes": {
+                "steady": self.enabled,
+                "strobe": self.strobe_enabled,
+                "random": self.random_enabled,
+                "effect": self.effect_enabled,
+                "audio": self.audio_enabled,
+                "look": self.look_enabled,
+            },
+            "connected": self.connected,
+        }
+
+    # ------------------------------------------------------------------
     # State setters
     # ------------------------------------------------------------------
     def set_values(

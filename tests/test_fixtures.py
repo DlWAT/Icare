@@ -63,3 +63,5 @@ def test_patch_json_round_trip():
     back = patch_from_json(dumped)
     assert [f.name for f in back] == [f.name for f in patch]
     assert [f.address for f in back] == [f.address for f in patch]
+    assert [f.x for f in back] == [f.x for f in patch]
+    assert [f.angle for f in back] == [f.angle for f in patch]

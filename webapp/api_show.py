@@ -119,6 +119,12 @@ def api_looks_apply():
     return _bad(f"Could not apply look {name!r}", 422)
 
 
+@api_show_bp.get("/api/simulation")
+def api_simulation():
+    """Current DMX state for the 3D simulation (all fixtures + fog)."""
+    return jsonify({"ok": True, **dmx.snapshot()})
+
+
 # ---------------------------------------------------------------------------
 # Ableton link
 # ---------------------------------------------------------------------------

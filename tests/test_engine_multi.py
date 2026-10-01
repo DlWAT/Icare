@@ -71,6 +71,17 @@ def test_blackout_zeroes_lights_but_keeps_patch():
     assert len(c.patch) == 4
 
 
+def test_snapshot_has_positions_and_values():
+    c = make_engine()
+    c.set_values(r=255, g=0, b=0, amp=255)
+    snap = c.snapshot()
+    assert [f["name"] for f in snap["fixtures"]] == ["Par1", "Wash1", "Spot1", "Fog"]
+    par = next(f for f in snap["fixtures"] if f["name"] == "Par1")
+    assert par["values"]["r"] == 255
+    assert "x" in par and "z" in par and "angle" in par
+    assert "fog" in snap and "master" in snap
+
+
 def test_apply_look_sets_per_fixture_state():
     c = make_engine()
     c.apply_look(

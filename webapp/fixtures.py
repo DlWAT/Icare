@@ -153,12 +153,20 @@ _register(
 # ---------------------------------------------------------------------------
 @dataclass
 class Fixture:
-    """A physical fixture placed in the universe."""
+    """A physical fixture placed in the universe.
+
+    ``x``/``z``/``angle`` are only used by the 3D simulation: they place the
+    fixture on the virtual stage (metres) and give the direction its beam
+    points to (degrees, 0 = towards the audience, +Z).
+    """
 
     name: str
     profile: str
     address: int  # 0-based start channel
     group: str = ""
+    x: float = 0.0
+    z: float = 0.0
+    angle: float = 0.0
 
     @property
     def profile_obj(self) -> FixtureProfile:
@@ -175,6 +183,9 @@ class Fixture:
             "profile": self.profile,
             "address": self.address,
             "group": self.group,
+            "x": self.x,
+            "z": self.z,
+            "angle": self.angle,
         }
 
     @classmethod
@@ -184,23 +195,67 @@ class Fixture:
             profile=str(raw["profile"]),
             address=int(raw["address"]),
             group=str(raw.get("group", "")),
+            x=float(raw.get("x", 0.0)),
+            z=float(raw.get("z", 0.0)),
+            angle=float(raw.get("angle", 0.0)),
         )
 
 
 def default_patch() -> list[Fixture]:
-    """Return the patch matching the documented rig, packed from channel 0."""
+    """Return the patch matching the documented rig, packed from channel 0.
+
+    Stage coordinates are a simple, tidy layout: the six PARs form a back line,
+    the washes sit at the sides, the two spots are near the centre and the fog
+    machine is front-right.
+    """
     out: list[Fixture] = []
     addr = 0
-    for i in range(1, 7):
-        out.append(Fixture(f"ParLED{i}", "rgbwa_par_5ch", addr, group="pars"))
+
+    for i in range(1, 7):  # 6× RGBWA PAR — back line
+        out.append(
+            Fixture(
+                f"ParLED{i}",
+                "rgbwa_par_5ch",
+                addr,
+                group="pars",
+                x=-5.0 + (i - 1) * 2.0,
+                z=-2.5,
+                angle=0.0,
+            )
+        )
         addr += PROFILES["rgbwa_par_5ch"].size
-    for i in range(1, 3):
-        out.append(Fixture(f"Wash{i}", "wild_wash_132_6ch", addr, group="wash"))
+
+    for i in range(1, 3):  # 2× Wild Wash — sides, aimed inwards
+        out.append(
+            Fixture(
+                f"Wash{i}",
+                "wild_wash_132_6ch",
+                addr,
+                group="wash",
+                x=-5.5 if i == 1 else 5.5,
+                z=-1.5,
+                angle=35.0 if i == 1 else -35.0,
+            )
+        )
         addr += PROFILES["wild_wash_132_6ch"].size
-    for i in range(1, 3):
-        out.append(Fixture(f"QSpot{i}", "cameo_qspot40_9ch", addr, group="spots"))
+
+    for i in range(1, 3):  # 2× Cameo Q-Spot — near centre
+        out.append(
+            Fixture(
+                f"QSpot{i}",
+                "cameo_qspot40_9ch",
+                addr,
+                group="spots",
+                x=-2.0 if i == 1 else 2.0,
+                z=-2.2,
+                angle=0.0,
+            )
+        )
         addr += PROFILES["cameo_qspot40_9ch"].size
-    out.append(Fixture("Fog", "stairville_mfog1500_3ch", addr, group="fx"))
+
+    out.append(
+        Fixture("Fog", "stairville_mfog1500_3ch", addr, group="fx", x=4.5, z=3.2, angle=180.0)
+    )
     return out
 
 
@@ -279,6 +334,9 @@ def patch_summary(patch: Iterable[Fixture]) -> list[dict[str, Any]]:
                 "address": fx.address,
                 "channels": prof.size,
                 "end": fx.end,
+                "x": fx.x,
+                "z": fx.z,
+                "angle": fx.angle,
             }
         )
     return out

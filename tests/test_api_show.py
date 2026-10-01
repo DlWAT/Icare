@@ -68,6 +68,17 @@ def test_apply_missing_look_returns_422(client):
     assert r.status_code == 422
 
 
+def test_simulation_endpoint(client):
+    r = client.get("/api/simulation")
+    assert r.status_code == 200
+    j = r.get_json()
+    assert j["ok"] is True
+    assert len(j["fixtures"]) == 11
+    fog = next(f for f in j["fixtures"] if f["name"] == "Fog")
+    assert {"x", "z", "angle", "values"} <= set(fog)
+    assert "fog" in j and "master" in j
+
+
 def test_fog_endpoint(client):
     r = client.post("/api/fog", json={"level": 100})
     assert r.status_code == 200
