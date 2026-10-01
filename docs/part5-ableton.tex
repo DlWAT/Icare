@@ -230,6 +230,24 @@ et vérifier le rendu avant la répétition.
   \item la couleur et l'intensité du faisceau suivent les canaux DMX.
 \end{itemize}
 
+\paragraph{Un rendu optique, pas un dessin.} Les faisceaux ne sont pas des cônes
+pleins : ils sont calculés par un shader qui reproduit les propriétés d'un
+faisceau réel.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Décroissance radiale} : le faisceau est plus intense sur son axe
+        et s'éteint doucement vers ses bords (pas de bord net) ; un Q-Spot a un
+        c\oe{}ur serré, un Wild Wash est large et homogène.
+  \item \textbf{Décroissance axiale} : l'intensité diminue avec la distance.
+  \item \textbf{Pièce au sol} : à l'intersection du faisceau et du sol, une
+        \emph{flaque} de lumière elliptique apparaît, dimensionnée par l'angle.
+  \item \textbf{Tone mapping ACES} et sortie sRGB : les recouvrements de
+        faisceaux «{}brûlent{}» vers le blanc au lieu de saturer brutalement,
+        comme sur une image filmée.
+  \item La salle est \textbf{sombre} ; seul ce que la lumière touche est visible.
+        Un curseur \emph{Exposition} règle l'ensemble.
+\end{itemize}
+
 \paragraph{La fumée est éclairée par les lumières.} La fumée n'est pas
 auto-éclairée : chaque particule reçoit la lumière \emph{qui l'atteint
 réellement}. On teste, pour chaque faisceau allumé, si la particule tombe dans
