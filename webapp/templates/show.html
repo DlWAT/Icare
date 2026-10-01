@@ -67,6 +67,24 @@
     </div>
 
     <div class="panel" style="grid-column: 1 / -1;">
+      <h3>Simulation 3D</h3>
+      <div class="row" style="align-items:center;gap:14px;flex-wrap:wrap;">
+        <label style="flex:0 1 260px;">Fumée
+          <input type="range" id="fog-level" min="0" max="255" value="0" />
+        </label>
+        <span class="muted small">niveau <b id="fog-value">0</b></span>
+        <button id="btn-fog-apply" class="btn-small">Appliquer</button>
+        <button id="btn-fog-cut" class="btn-small">Couper</button>
+        <label class="row" style="align-items:center;gap:6px;">
+          <input type="checkbox" id="smoke-visible" checked /> Afficher la fumée
+        </label>
+        <span class="spacer"></span>
+        <span class="muted small">glisser pour tourner autour de la scène</span>
+      </div>
+      <div id="stage3d" style="width:100%;height:520px;border-radius:10px;overflow:hidden;background:#07080b;margin-top:8px;"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1;">
       <h3>Patch DMX</h3>
       <div class="table-wrap">
         <table id="patch-table" class="table"></table>

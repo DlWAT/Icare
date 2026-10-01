@@ -1016,6 +1016,7 @@ function bindShow() {
     state.groups = [...new Set(state.patch.map((f) => f.group).filter(Boolean))];
     targetOptions();
     renderPatch();
+    buildStageFixtures(state.patch);
   }
 
   document.getElementById('btn-abl-connect')?.addEventListener('click', async () => {
@@ -1061,6 +1062,289 @@ function bindShow() {
   refreshPatch();
   refresh();
   setInterval(refresh, 1000);
+
+  // ---- 3D simulation ----
+  setupStage3D();
+  setInterval(pollSim, 120);
+
+  const fogSlider = document.getElementById('fog-level');
+  const fogValue = document.getElementById('fog-value');
+  function sendFog() {
+    if (fogSlider) postJSON('/api/fog', { level: Number(fogSlider.value) });
+  }
+  fogSlider?.addEventListener('input', () => {
+    if (fogValue) fogValue.textContent = fogSlider.value;
+  });
+  fogSlider?.addEventListener('change', sendFog);
+  document.getElementById('btn-fog-apply')?.addEventListener('click', sendFog);
+  document.getElementById('btn-fog-cut')?.addEventListener('click', () => {
+    if (fogSlider) fogSlider.value = '0';
+    if (fogValue) fogValue.textContent = '0';
+    postJSON('/api/fog', { level: 0 });
+  });
+  document.getElementById('smoke-visible')?.addEventListener('change', (e) => {
+    if (window.__stage) window.__stage.smokeOn = e.target.checked;
+  });
+}
+
+/* ============================================================================
+ * Show page — 3D stage simulation (all fixtures + fluid smoke)
+ * ============================================================================ */
+
+function makeSmokeTexture() {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d');
+  for (let i = 0; i < 8; i++) {
+    const x = size / 2 + (Math.random() - 0.5) * size * 0.42;
+    const y = size / 2 + (Math.random() - 0.5) * size * 0.42;
+    const r = size * (0.16 + Math.random() * 0.22);
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, 'rgba(255,255,255,0.55)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function setupStage3D() {
+  const container = document.getElementById('stage3d');
+  if (!container || typeof THREE === 'undefined') return;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x07080b);
+  scene.fog = new THREE.FogExp2(0x07080b, 0.03);
+
+  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / Math.max(1, container.clientHeight), 0.1, 300);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.innerHTML = '';
+  container.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0x556677, 1.4));
+  scene.add(new THREE.HemisphereLight(0x334455, 0x111111, 0.7));
+
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(50, 40),
+    new THREE.MeshStandardMaterial({ color: 0x0d0f14, roughness: 1 }),
+  );
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  const grid = new THREE.GridHelper(44, 22, 0x1b2130, 0x121722);
+  grid.position.y = 0.01;
+  scene.add(grid);
+
+  const wall = new THREE.Mesh(
+    new THREE.PlaneGeometry(30, 12),
+    new THREE.MeshStandardMaterial({ color: 0x0b0d12, roughness: 1 }),
+  );
+  wall.position.set(0, 6, -6);
+  scene.add(wall);
+
+  const tex = makeSmokeTexture();
+  const smoke = [];
+  for (let i = 0; i < 110; i++) {
+    const mat = new THREE.SpriteMaterial({ map: tex, color: 0xd7dbe2, transparent: true, opacity: 0, depthWrite: false });
+    const sp = new THREE.Sprite(mat);
+    sp.visible = false;
+    scene.add(sp);
+    smoke.push({ sprite: sp, life: 0, max: 1, vy: 0, drift: 0, seed: 0, spin: 0, size: 1 });
+  }
+
+  const cam = { theta: 0, phi: 1.15, radius: 15 };
+  function updateCam() {
+    camera.position.set(
+      Math.sin(cam.phi) * Math.sin(cam.theta) * cam.radius,
+      1.4 + Math.cos(cam.phi) * cam.radius,
+      Math.sin(cam.phi) * Math.cos(cam.theta) * cam.radius,
+    );
+    camera.lookAt(0, 1.4, 0);
+  }
+  updateCam();
+
+  let drag = false;
+  let px = 0;
+  let py = 0;
+  renderer.domElement.addEventListener('pointerdown', (e) => { drag = true; px = e.clientX; py = e.clientY; });
+  window.addEventListener('pointerup', () => { drag = false; });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    cam.theta -= (e.clientX - px) * 0.006;
+    cam.phi = Math.max(0.25, Math.min(1.35, cam.phi - (e.clientY - py) * 0.005));
+    px = e.clientX; py = e.clientY;
+    updateCam();
+  });
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth;
+    const h = Math.max(1, container.clientHeight);
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  });
+
+  window.__stage = {
+    scene, camera, renderer, smoke,
+    fixtures: {},
+    fogPos: new THREE.Vector3(4.5, 0.35, 3.2),
+    level: 0,
+    smokeOn: true,
+    last: 0,
+    emitAcc: 0,
+  };
+
+  stageAnimate();
+}
+
+function buildStageFixtures(patch) {
+  const st = window.__stage;
+  if (!st) return;
+  Object.values(st.fixtures).forEach((f) => {
+    st.scene.remove(f.beam);
+    st.scene.remove(f.body);
+  });
+  st.fixtures = {};
+
+  patch.forEach((f) => {
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 0.32, 0.45),
+      new THREE.MeshStandardMaterial({ color: 0x2b2f37, roughness: 0.7, metalness: 0.2 }),
+    );
+    body.position.set(f.x, 0.35, f.z);
+    st.scene.add(body);
+
+    const L = 8;
+    const beam = new THREE.Mesh(
+      new THREE.ConeGeometry(0.85, L, 20, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0,
+        depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      }),
+    );
+    beam.visible = false;
+    st.scene.add(beam);
+
+    const a = THREE.MathUtils.degToRad(f.angle || 0);
+    const dir = new THREE.Vector3(Math.sin(a), -0.5, Math.cos(a)).normalize();
+    beam.quaternion.copy(
+      new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().negate()),
+    );
+    beam.position.set(f.x, 0.5, f.z).addScaledVector(dir, L / 2);
+
+    st.fixtures[f.name] = { body, beam, color: new THREE.Color(0xffffff), isFog: f.group === 'fx' };
+  });
+}
+
+function updateStage(snap) {
+  const st = window.__stage;
+  if (!st) return;
+  st.level = (snap.fog && snap.fog.level) || 0;
+
+  snap.fixtures.forEach((f) => {
+    const fx = st.fixtures[f.name];
+    if (!fx) return;
+    if (fx.isFog) {
+      st.fogPos.set(f.x, 0.35, f.z);
+      return;
+    }
+    const v = f.values || {};
+    const hasDimmer = 'dimmer' in v;
+    const base = hasDimmer ? (v.dimmer || 0) / 255 : 1;
+    let R = (v.r || 0) / 255;
+    let G = (v.g || 0) / 255;
+    let B = (v.b || 0) / 255;
+    const w = (v.w || 0) / 255;
+    const am = (v.a || 0) / 255;
+    R += w; G += w; B += w;
+    R += am; G += am * 0.66; B += am * 0.24;
+    const amount = Math.min(1, Math.max(R, G, B));
+    R = Math.min(1, R); G = Math.min(1, G); B = Math.min(1, B);
+    const intensity = base * amount;
+
+    fx.color.setRGB(R, G, B);
+    fx.beam.material.color.copy(fx.color);
+    fx.beam.material.opacity = Math.min(0.5, 0.06 + 0.5 * intensity);
+    fx.beam.visible = intensity > 0.03;
+    if (fx.body.material.emissive) {
+      fx.body.material.emissive.copy(fx.color).multiplyScalar(0.8 * intensity);
+    }
+  });
+}
+
+function spawnSmoke() {
+  const st = window.__stage;
+  if (!st || !st.smokeOn) return;
+  const p = st.smoke.find((s) => !s.sprite.visible);
+  if (!p) return;
+  p.life = 0;
+  p.max = 3.2 + Math.random() * 2.8;
+  p.vy = 0.4 + Math.random() * 0.5;
+  p.drift = (Math.random() - 0.5) * 0.6;
+  p.seed = Math.random() * 10;
+  p.spin = (Math.random() - 0.5) * 2.2;
+  p.size = 0.7 + Math.random() * 0.9;
+  const sp = p.sprite;
+  sp.visible = true;
+  sp.position.set(
+    st.fogPos.x + (Math.random() - 0.5) * 0.6,
+    st.fogPos.y + Math.random() * 0.4,
+    st.fogPos.z + (Math.random() - 0.5) * 0.6,
+  );
+  sp.scale.set(p.size, p.size, 1);
+  sp.material.opacity = 0;
+}
+
+function stageAnimate() {
+  requestAnimationFrame(stageAnimate);
+  const st = window.__stage;
+  if (!st) return;
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.05, st.last ? now - st.last : 0.016);
+  st.last = now;
+
+  if (st.smokeOn) {
+    st.emitAcc += (st.level / 255) * 20 * dt;
+    while (st.emitAcc >= 1) {
+      st.emitAcc -= 1;
+      spawnSmoke();
+    }
+  }
+
+  st.smoke.forEach((p) => {
+    if (!p.sprite.visible) return;
+    p.life += dt;
+    const t = p.life / p.max;
+    if (t >= 1) {
+      p.sprite.visible = false;
+      p.sprite.material.opacity = 0;
+      return;
+    }
+    p.sprite.position.y += p.vy * dt;
+    p.sprite.position.x += (Math.sin(p.seed + p.life * 0.9) * 0.5 + p.drift) * dt;
+    p.sprite.position.z += Math.cos(p.seed * 1.3 + p.life * 0.6) * 0.3 * dt;
+    const s = p.size * (1 + t * 2.4);
+    p.sprite.scale.set(s, s, 1);
+    p.sprite.material.rotation += p.spin * dt * 0.25;
+    const fadeIn = Math.min(1, t * 7);
+    const fadeOut = 1 - Math.max(0, (t - 0.35) / 0.65);
+    p.sprite.material.opacity = 0.26 * fadeIn * fadeOut;
+  });
+
+  st.renderer.render(st.scene, st.camera);
+}
+
+async function pollSim() {
+  if (!window.__stage) return;
+  const r = await getJSON('/api/simulation');
+  if (r.ok) updateStage(r);
 }
 
 /* ============================================================================
