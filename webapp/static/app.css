@@ -355,3 +355,26 @@ input:focus, select:focus { border-color: var(--accent); }
 	from { opacity: 0; transform: translateY(8px); }
 	to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------- Show page ---------- */
+.show-stats { gap: 16px; flex-wrap: wrap; }
+.show-stats b { color: var(--text); }
+
+.active-row { color: var(--accent); font-weight: 600; }
+
+.look-targets { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chip {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 4px 8px; border-radius: 999px;
+	background: var(--card-bg); border: 1px solid var(--border);
+	font-size: 13px;
+}
+.chip i {
+	width: 12px; height: 12px; border-radius: 3px;
+	border: 1px solid rgba(0,0,0,.3); display: inline-block;
+}
+.chip-x {
+	border: none; background: transparent; color: var(--muted, #888);
+	cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+}
+.chip-x:hover { color: var(--danger); }

@@ -31,3 +31,8 @@ def sequence_page():
 @pages_bp.route("/live")
 def live_page():
     return render_template("live.html", page="live", **_ctx())
+
+
+@pages_bp.route("/show")
+def show_page():
+    return render_template("show.html", page="show", **_ctx())

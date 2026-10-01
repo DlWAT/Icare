@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Show</h1>
+  <p class="muted small">
+    Pilote les lumières depuis <strong>Ableton Live</strong> : chaque scène déclenche un «&nbsp;look&nbsp;».
+    Nécessite le remote script <em>AbletonOSC</em> activé dans Ableton.
+  </p>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Liaison Ableton</h3>
+      <div class="row">
+        <button id="btn-abl-connect" class="btn-primary">Connecter Ableton</button>
+        <button id="btn-abl-disconnect">Déconnecter</button>
+      </div>
+      <div class="row">
+        <span id="abl-status" class="status-pill"><span class="dot"></span><span class="status-label">Ableton</span></span>
+      </div>
+      <div class="row show-stats">
+        <span>BPM <b id="abl-tempo">–</b></span>
+        <span>Scène <b id="abl-scene">–</b></span>
+        <span>Beat <b id="abl-beat">–</b></span>
+        <span>Lecture <b id="abl-playing">–</b></span>
+      </div>
+      <p class="muted small" id="abl-hint">
+        Pas d'Ableton ? Le lien reste « déconnecté », rien ne casse.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3>Scènes → Looks</h3>
+      <label class="row" style="align-items:center;gap:8px;">
+        <input type="checkbox" id="scenes-enabled" checked /> Activer le suivi des scènes
+      </label>
+      <div class="table-wrap">
+        <table id="scene-table" class="table"></table>
+      </div>
+      <p class="muted small">Le look s'applique quand tu sélectionnes/lances la scène dans Ableton.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Looks</h3>
+      <ul id="looks-list" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>Éditeur de look</h3>
+      <div class="row">
+        <label>Nom <input type="text" id="look-name" placeholder="ex. Refrain" /></label>
+        <button id="btn-look-new" class="btn-small">Nouveau</button>
+      </div>
+      <div class="row">
+        <label>Cible
+          <select id="look-target"></select>
+        </label>
+        <label>Couleur <input type="color" id="look-color" value="#ff0000" /></label>
+        <label>Intensité <input type="number" id="look-dimmer" min="0" max="255" value="255" /></label>
+        <label>Strobe <input type="number" id="look-strobe" min="0" max="255" value="0" /></label>
+        <button id="btn-look-addtarget" class="btn-small">+ Cible</button>
+      </div>
+      <div id="look-targets" class="look-targets"></div>
+      <div class="row">
+        <button id="btn-look-save" class="btn-primary">Sauvegarder</button>
+        <button id="btn-look-apply">Appliquer</button>
+      </div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1;">
+      <h3>Patch DMX</h3>
+      <div class="table-wrap">
+        <table id="patch-table" class="table"></table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

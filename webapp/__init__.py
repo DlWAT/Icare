@@ -36,6 +36,7 @@ def create_app() -> Flask:
     from .api_palettes import api_palettes_bp
     from .api_sequence import api_sequence_bp
     from .api_settings import api_settings_bp
+    from .api_show import api_show_bp
     from .pages import pages_bp
 
     app.register_blueprint(pages_bp)
@@ -45,6 +46,7 @@ def create_app() -> Flask:
     app.register_blueprint(api_health_bp)
     app.register_blueprint(api_palettes_bp)
     app.register_blueprint(api_settings_bp)
+    app.register_blueprint(api_show_bp)
 
     logger.info("Icare Web app created")
     return app

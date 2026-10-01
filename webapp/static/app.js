@@ -875,6 +875,195 @@ function setupLive3D() {
 }
 
 /* ============================================================================
+ * Show page (Ableton link, looks, patch)
+ * ============================================================================ */
+
+function bindShow() {
+  const state = { look: { name: '', targets: {}, fog: {} }, looks: [], patch: [], groups: [], fixtures: [] };
+
+  function targetOptions() {
+    const sel = document.getElementById('look-target');
+    if (!sel) return;
+    sel.innerHTML = '';
+    ['*', ...state.groups, ...state.fixtures].forEach((o) => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = o === '*' ? 'Tous les projecteurs' : o;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderTargets() {
+    const box = document.getElementById('look-targets');
+    if (!box) return;
+    box.innerHTML = '';
+    Object.entries(state.look.targets).forEach(([target, st]) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      const color = rgbToHex(st.r || 0, st.g || 0, st.b || 0);
+      const sw = document.createElement('i');
+      sw.style.background = color;
+      chip.appendChild(sw);
+      chip.appendChild(document.createTextNode(`${target} · ${st.dimmer ?? 255}`));
+      const x = document.createElement('button');
+      x.className = 'chip-x';
+      x.textContent = '×';
+      x.addEventListener('click', () => { delete state.look.targets[target]; renderTargets(); });
+      chip.appendChild(x);
+      box.appendChild(chip);
+    });
+  }
+
+  function renderPatch() {
+    const tbl = document.getElementById('patch-table');
+    if (!tbl) return;
+    const thead = '<thead><tr><th>Nom</th><th>Profil</th><th>Groupe</th><th>Canal</th><th>Canaux</th></tr></thead>';
+    const rows = state.patch.map((f) =>
+      `<tr><td>${f.name}</td><td>${f.profileLabel}</td><td>${f.group || ''}</td><td>${f.address + 1}</td><td>${f.channels}</td></tr>`).join('');
+    tbl.innerHTML = thead + `<tbody>${rows}</tbody>`;
+  }
+
+  function renderScenes(ableton, scenes) {
+    const tbl = document.getElementById('scene-table');
+    if (!tbl) return;
+    const names = (ableton.sceneNames || []).map((n, i) => [i + 1, n]).filter(([, n]) => n);
+    const head = '<thead><tr><th>#</th><th>Scène</th><th>Look</th></tr></thead>';
+    const rows = names.map(([idx, name]) => {
+      const current = scenes.mapping?.[name] || '';
+      const opts = ['<option value="">—</option>']
+        .concat(state.looks.map((l) => `<option value="${l}"${l === current ? ' selected' : ''}>${l}</option>`))
+        .join('');
+      const active = scenes.activeScene === name ? ' style="color:var(--accent)"' : '';
+      return `<tr><td>${idx}</td><td${active}>${name}</td><td><select data-scene="${name}">${opts}</select></td></tr>`;
+    }).join('');
+    tbl.innerHTML = head + `<tbody>${rows}</tbody>`;
+    tbl.querySelectorAll('select[data-scene]').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const r = await postJSON('/api/scenes/mapping', { scene: sel.dataset.scene, look: sel.value });
+        if (r.ok) toast('Mapping enregistré', 'success', 1200);
+      });
+    });
+  }
+
+  function renderLooks() {
+    const ul = document.getElementById('looks-list');
+    if (!ul) return;
+    ul.innerHTML = '';
+    state.looks.forEach((name) => {
+      const li = document.createElement('li');
+      const span = document.createElement('span');
+      span.textContent = name;
+      li.appendChild(span);
+      const load = document.createElement('button');
+      load.textContent = 'Charger'; load.className = 'btn-small';
+      load.addEventListener('click', () => loadLook(name));
+      const apply = document.createElement('button');
+      apply.textContent = 'Appliquer'; apply.className = 'btn-small';
+      apply.addEventListener('click', async () => {
+        const r = await postJSON('/api/looks/apply', { name });
+        if (r.ok) toast(`Look « ${name} » appliqué`, 'success', 1200);
+      });
+      const del = document.createElement('button');
+      del.textContent = '×'; del.className = 'btn-small btn-danger';
+      del.addEventListener('click', async () => {
+        if (!confirm(`Supprimer le look ${name} ?`)) return;
+        await postJSON('/api/looks/delete', { name });
+        refresh();
+      });
+      li.appendChild(load); li.appendChild(apply); li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  async function loadLook(name) {
+    const r = await getJSON(`/api/looks/load?name=${encodeURIComponent(name)}`);
+    if (!r.ok) { toast(r.error || 'Erreur', 'error'); return; }
+    state.look = { name: r.look.name, targets: r.look.targets || {}, fog: r.look.fog || {} };
+    document.getElementById('look-name').value = state.look.name;
+    renderTargets();
+  }
+
+  function updateStats(a) {
+    document.getElementById('abl-tempo').textContent = a.tempo ?? '–';
+    document.getElementById('abl-scene').textContent = a.selectedSceneName || (a.selectedScene >= 0 ? `#${a.selectedScene + 1}` : '–');
+    document.getElementById('abl-beat').textContent = a.beat;
+    document.getElementById('abl-playing').textContent = a.isPlaying ? '▶' : '⏹';
+    const pill = document.getElementById('abl-status');
+    if (pill) {
+      pill.classList.toggle('ok', !!a.connected);
+      pill.classList.toggle('idle', !a.connected);
+      const label = pill.querySelector('.status-label');
+      if (label) label.textContent = a.connected ? 'Ableton OK' : 'Ableton OFF';
+    }
+  }
+
+  async function refresh() {
+    const r = await getJSON('/api/scenes');
+    if (!r.ok) return;
+    state.looks = r.looks || [];
+    updateStats(r.ableton || {});
+    renderLooks();
+    renderScenes(r.ableton || {}, r.scenes || {});
+    const enabled = document.getElementById('scenes-enabled');
+    if (enabled) enabled.checked = !!r.scenes?.enabled;
+  }
+
+  async function refreshPatch() {
+    const r = await getJSON('/api/patch');
+    if (!r.ok) return;
+    state.patch = r.patch || [];
+    state.fixtures = state.patch.map((f) => f.name);
+    state.groups = [...new Set(state.patch.map((f) => f.group).filter(Boolean))];
+    targetOptions();
+    renderPatch();
+  }
+
+  document.getElementById('btn-abl-connect')?.addEventListener('click', async () => {
+    const r = await postJSON('/api/ableton/connect');
+    if (r.ok) { toast('Liaison Ableton active — lance Ableton avec le script AbletonOSC', 'success', 3500); refresh(); }
+    else toast(r.error || 'Erreur', 'error', 4000);
+  });
+  document.getElementById('btn-abl-disconnect')?.addEventListener('click', async () => {
+    await postJSON('/api/ableton/disconnect');
+    refresh();
+  });
+
+  document.getElementById('btn-look-new')?.addEventListener('click', () => {
+    state.look = { name: '', targets: {}, fog: {} };
+    document.getElementById('look-name').value = '';
+    renderTargets();
+  });
+  document.getElementById('btn-look-addtarget')?.addEventListener('click', () => {
+    const target = document.getElementById('look-target').value;
+    const { r, g, b } = hexToRgb(document.getElementById('look-color').value);
+    state.look.targets[target] = {
+      r, g, b,
+      dimmer: Number($val('look-dimmer')),
+      strobe: Number($val('look-strobe')),
+    };
+    renderTargets();
+  });
+  document.getElementById('btn-look-save')?.addEventListener('click', async () => {
+    state.look.name = document.getElementById('look-name').value.trim();
+    if (!state.look.name) { toast('Nom de look requis', 'error'); return; }
+    const r = await postJSON('/api/looks/save', state.look);
+    if (r.ok) { toast(`Look « ${state.look.name} » sauvegardé`, 'success'); refresh(); }
+    else toast(r.error || 'Erreur', 'error');
+  });
+  document.getElementById('btn-look-apply')?.addEventListener('click', async () => {
+    const r = await postJSON('/api/looks/apply', { look: state.look });
+    if (r.ok) toast('Look appliqué', 'success', 1200);
+  });
+  document.getElementById('scenes-enabled')?.addEventListener('change', (e) => {
+    postJSON('/api/scenes/enabled', { enabled: e.target.checked });
+  });
+
+  refreshPatch();
+  refresh();
+  setInterval(refresh, 1000);
+}
+
+/* ============================================================================
  * Boot
  * ============================================================================ */
 
@@ -886,4 +1075,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'direct') bindExperiment();
   else if (page === 'sequence') bindSequence();
   else if (page === 'live') bindLive();
+  else if (page === 'show') bindShow();
 });
