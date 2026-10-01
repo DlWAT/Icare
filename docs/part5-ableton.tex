@@ -274,6 +274,65 @@ Hors de tout faisceau, il ne reste qu'un \textbf{très léger} voile naturel
 ($\approx 3{,}5\,\%$), conformément au rendu réel : sans lumière qui la frappe,
 la fumée est sombre.
 
+\chapter{Le morceau test (sans Ableton)}
+\label{ch:testshow}
+
+Pour vérifier toute la chaîne sans Ableton, \Icare{} sait jouer un
+\textbf{morceau test} : une \emph{timeline} de cues décrite dans un fichier
+JSON (\file{Shows/}). Le lecteur tourne dans un thread et pilote le même
+contrôleur DMX; l'interface et la simulation 3D suivent automatiquement.
+
+\section{Format d'un cue}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{8.6cm}@{}}
+    \toprule
+    \textbf{Type} & \textbf{Effet} \\
+    \midrule
+    \code{look} & Rappelle un look par son nom. \\
+    \code{effect} & Lance un effet (rainbow, fire, police, chase). \\
+    \code{strobe} & Strobe plein cadre (\code{freq}, \code{shuffle}). \\
+    \code{fog} & Fixe le niveau de fumée. \\
+    \code{blackout} & Éteint tout. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Types de cues.}
+\end{table}
+
+Chaque cue dure \code{seconds} secondes, ou \code{beats} temps au tempo du
+morceau (\code{bpm}). Un champ \code{fog} optionnel fixe la fumée pour la
+durée du cue --- et \emph{prime} sur la fumée du look.
+
+\begin{lstlisting}[language=json,caption={Extrait de \file{Shows/demo.json}.}]
+{
+  "name": "Morceau test",
+  "bpm": 120,
+  "cues": [
+    { "type": "look",  "name": "INTRO", "seconds": 8, "fog": 20 },
+    { "type": "look",  "name": "A",     "seconds": 8, "fog": 60 },
+    { "type": "look",  "name": "CHORUS","seconds": 10, "fog": 180 },
+    { "type": "strobe","freq": 10,      "seconds": 3,  "fog": 160 },
+    { "type": "effect","name": "rainbow","seconds": 8, "fog": 140 },
+    { "type": "blackout","seconds": 4 }
+  ]
+}
+\end{lstlisting}
+
+\section{Mise en oeuvre}
+
+Dans l'onglet \textbf{Show}, le panneau \emph{Morceau test} propose la liste des
+morceaux, les boutons \emph{Lancer}, \emph{Pause} et \emph{Stop}, et une barre
+de progression indiquant le cue courant. Côté API :
+\api{GET /api/show/list}, \api{GET /api/show/status},
+\api{POST /api/show/play}, \api{POST /api/show/pause},
+\api{POST /api/show/stop}.
+
+Le morceau \file{Shows/demo.json} fourni parcourt 13 cues : entrée en bleu,
+montée en énergie, refrain, strobe, break, arc-en-ciel, gyrophare, solo,
+chenillard, feu, sortie et noir. C'est le moyen le plus simple de tester les
+looks, les effets, la fumée et la 3D d'un seul geste.
+
 \chapter{Architecture logicielle mise à jour}
 \label{ch:archi2}
 
