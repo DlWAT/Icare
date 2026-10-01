@@ -1088,6 +1088,47 @@ function bindShow() {
   document.getElementById('stage-exposure')?.addEventListener('input', (e) => {
     if (window.__stage) window.__stage.renderer.toneMappingExposure = Number(e.target.value);
   });
+
+  // ---- test show (timeline of cues, no Ableton) ----
+  async function refreshShows() {
+    const r = await getJSON('/api/show/list');
+    const sel = document.getElementById('show-select');
+    if (!sel || !r.ok) return;
+    sel.innerHTML = '';
+    (r.shows || []).forEach((n) => {
+      const o = document.createElement('option');
+      o.value = n;
+      o.textContent = n;
+      sel.appendChild(o);
+    });
+    if ((r.shows || []).includes('demo')) sel.value = 'demo';
+  }
+  document.getElementById('btn-show-play')?.addEventListener('click', async () => {
+    const name = document.getElementById('show-select')?.value;
+    const r = await postJSON('/api/show/play', { name });
+    if (!r.ok) toast(r.error || 'Erreur', 'error');
+  });
+  document.getElementById('btn-show-pause')?.addEventListener('click', () => postJSON('/api/show/pause'));
+  document.getElementById('btn-show-stop')?.addEventListener('click', () => postJSON('/api/show/stop'));
+
+  async function pollShow() {
+    const r = await getJSON('/api/show/status');
+    if (!r.ok) return;
+    const s = r.status;
+    const bar = document.getElementById('show-progress');
+    if (bar) bar.style.width = `${s.progress}%`;
+    const label = document.getElementById('show-label');
+    if (label) label.textContent = `${s.playing ? (s.paused ? '⏸ pause' : '▶ lecture') : '⏹'} ${s.index}/${s.total}`;
+    const cue = document.getElementById('show-cue');
+    if (cue) {
+      cue.textContent = s.cue
+        ? `Cue : ${s.cue}${s.next ? ` → ${s.next}` : ''}`
+        : 'Choisis un morceau puis « Lancer ». La scène 3D suit automatiquement.';
+    }
+  }
+  refreshShows();
+  pollShow();
+  setInterval(pollShow, 300);
 }
 
 /* ============================================================================

@@ -64,6 +64,8 @@ PALETTES_DIR.mkdir(parents=True, exist_ok=True)
 # Looks (static per-fixture light states) and the DMX patch.
 LOOKS_DIR = RUNTIME_ROOT / "Looks"
 LOOKS_DIR.mkdir(parents=True, exist_ok=True)
+SHOWS_DIR = RUNTIME_ROOT / "Shows"
+SHOWS_DIR.mkdir(parents=True, exist_ok=True)
 PATCH_FILE = RUNTIME_ROOT / "patch.json"
 SCENES_FILE = RUNTIME_ROOT / "scenes.json"
 

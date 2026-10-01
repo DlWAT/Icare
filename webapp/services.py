@@ -13,10 +13,12 @@ from .config import (
     PATCH_FILE,
     SCENES_FILE,
     SEQUENCES_DIR,
+    SHOWS_DIR,
     UserSettings,
 )
 from .dmx_controller import DMXController
 from .fixtures import load_patch
+from .show_player import ShowPlayer
 
 # Persistent user preferences (last port, base channel, theme, palettes…)
 settings = UserSettings.load()
@@ -31,8 +33,12 @@ dmx = DMXController(settings=settings, patch=patch)
 ableton = AbletonOSC()
 scene_engine = SceneEngine(ableton, dmx, str(LOOKS_DIR), SCENES_FILE)
 
+# Stand-alone show player (a timeline of cues, no Ableton needed).
+show_player = ShowPlayer(dmx, scene_engine)
+
 # Filesystem paths exposed for blueprints (kept as ``str`` for stdlib os.path
 # compatibility in places that still use it)
 SEQ_DIR = str(SEQUENCES_DIR)
 PALETTE_DIR = str(PALETTES_DIR)
 LOOK_DIR = str(LOOKS_DIR)
+SHOW_DIR = str(SHOWS_DIR)

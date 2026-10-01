@@ -8,6 +8,22 @@
   </p>
 
   <div class="grid">
+    <div class="panel" style="grid-column: 1 / -1;">
+      <h3>Morceau test <span class="badge">sans Ableton</span></h3>
+      <div class="row" style="align-items:center;gap:12px;flex-wrap:wrap;">
+        <select id="show-select"></select>
+        <button id="btn-show-play" class="btn-primary">▶ Lancer</button>
+        <button id="btn-show-pause">⏸ Pause</button>
+        <button id="btn-show-stop">⏹ Stop</button>
+        <span class="spacer"></span>
+        <span class="muted small" id="show-label">–</span>
+      </div>
+      <div class="progress" title="Progression" style="margin:8px 0;">
+        <div id="show-progress" class="progress-bar" style="width:0%"></div>
+      </div>
+      <p class="muted small" id="show-cue">Choisis un morceau puis « Lancer ». La scène 3D suit automatiquement.</p>
+    </div>
+
     <div class="panel">
       <h3>Liaison Ableton</h3>
       <div class="row">

@@ -79,6 +79,18 @@ def test_simulation_endpoint(client):
     assert "fog" in j and "master" in j
 
 
+def test_show_list(client):
+    r = client.get("/api/show/list")
+    assert r.status_code == 200
+    assert "demo" in r.get_json()["shows"]
+
+
+def test_show_status(client):
+    r = client.get("/api/show/status")
+    assert r.status_code == 200
+    assert "status" in r.get_json()
+
+
 def test_fog_endpoint(client):
     r = client.post("/api/fog", json={"level": 100})
     assert r.status_code == 200

@@ -1,0 +1,19 @@
+{
+  "name": "Morceau test",
+  "bpm": 120,
+  "cues": [
+    { "type": "look", "name": "INTRO", "seconds": 8, "fog": 20 },
+    { "type": "look", "name": "A", "seconds": 8, "fog": 60 },
+    { "type": "look", "name": "B", "seconds": 8, "fog": 100 },
+    { "type": "look", "name": "CHORUS", "seconds": 10, "fog": 180 },
+    { "type": "strobe", "freq": 10, "seconds": 3, "fog": 160 },
+    { "type": "look", "name": "BREAK", "seconds": 6, "fog": 220 },
+    { "type": "effect", "name": "rainbow", "speed": 1.5, "brightness": 200, "seconds": 8, "fog": 140 },
+    { "type": "effect", "name": "police", "speed": 1.0, "brightness": 220, "seconds": 6, "fog": 120 },
+    { "type": "look", "name": "SOLO", "seconds": 8, "fog": 90 },
+    { "type": "effect", "name": "chase", "speed": 2.0, "brightness": 220, "seconds": 6 },
+    { "type": "effect", "name": "fire", "speed": 1.2, "brightness": 200, "seconds": 6, "fog": 80 },
+    { "type": "look", "name": "OUTRO", "seconds": 8, "fog": 30 },
+    { "type": "blackout", "seconds": 4 }
+  ]
+}

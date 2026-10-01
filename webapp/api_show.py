@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 
 from flask import Blueprint, jsonify, request
@@ -13,7 +14,8 @@ from .fixtures import (
     validate_patch,
 )
 from .looks import Look, delete_look, list_looks, load_look, resolve, save_look
-from .services import LOOK_DIR, ableton, dmx, scene_engine
+from .services import LOOK_DIR, SHOW_DIR, ableton, dmx, scene_engine, show_player
+from .show_player import list_shows, load_show_file
 
 logger = logging.getLogger(__name__)
 api_show_bp = Blueprint("api_show", __name__)
@@ -184,6 +186,51 @@ def api_scenes_enabled():
     payload = request.get_json(silent=True) or {}
     scene_engine.set_enabled(bool(payload.get("enabled", True)))
     return jsonify({"ok": True, "scenes": scene_engine.status()})
+
+
+# ---------------------------------------------------------------------------
+# Test show (stand-alone timeline)
+# ---------------------------------------------------------------------------
+@api_show_bp.get("/api/show/list")
+def api_show_list():
+    return jsonify({"ok": True, "shows": list_shows(SHOW_DIR)})
+
+
+@api_show_bp.get("/api/show/status")
+def api_show_status():
+    return jsonify({"ok": True, "status": show_player.status()})
+
+
+@api_show_bp.post("/api/show/play")
+def api_show_play():
+    payload = request.get_json(silent=True) or {}
+    name = payload.get("name")
+    if name:
+        try:
+            data = load_show_file(SHOW_DIR, str(name))
+            show_player.load(data)
+        except FileNotFoundError:
+            return _bad("Show not found", 404)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            return _bad(str(exc), 422)
+    try:
+        show_player.start()
+    except ValueError as exc:
+        return _bad(str(exc))
+    return jsonify({"ok": True, "status": show_player.status()})
+
+
+@api_show_bp.post("/api/show/pause")
+def api_show_pause():
+    show_player.pause()
+    return jsonify({"ok": True, "status": show_player.status()})
+
+
+@api_show_bp.post("/api/show/stop")
+def api_show_stop():
+    show_player.stop()
+    dmx.blackout()
+    return jsonify({"ok": True, "status": show_player.status()})
 
 
 # ---------------------------------------------------------------------------

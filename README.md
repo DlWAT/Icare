@@ -18,7 +18,7 @@ The app runs entirely on your machine; the browser at
 | **Direct**   | Live RGB / amplitude / pan / tilt sliders, color picker, favourite-color palette, blackout, random colors, strobe overlay, **rainbow / fire / police / chase** procedural effects, **microphone audio-reactive** mode, real-time 3D visualization. |
 | **Séquence** | Visual editor for a beat-by-beat show. Insert *Uniform*, *Fade* and *Strobe* effects per fixture, save/load JSON files, accepts both the modern and the legacy schema. |
 | **Live**     | Loads a saved sequence and walks through it at a configurable BPM with a **tap-tempo** button, transport controls, progress bar and a 3D beam visualization mirroring the DMX output. |
-| **Show**     | Multi-fixture **patch** (11 fixtures), **looks** (static light states you author in the browser), a **3D simulation** of the whole stage with **fluid smoke**, and a link to **Ableton Live**: each Ableton scene triggers a look. Uses the AbletonOSC remote script. |
+| **Show**     | Multi-fixture **patch** (11 fixtures), **looks** (static light states you author in the browser), a **3D simulation** of the whole stage with **fluid smoke**, a link to **Ableton Live** (each scene triggers a look, via the AbletonOSC remote script), and a stand-alone **test show** (a timeline of cues: looks, effects, strobe, fog, blackout) to exercise everything without Ableton. |
 | **Topbar**   | Live DMX connection status indicator and a **dark/light theme** toggle. Settings (theme, last port, base channel, favourites) are persisted to disk. |
 
 ### Ableton Live link
@@ -198,6 +198,7 @@ Icare/
 │       └── vendor/three.min.js
 ├── Sequences/                # Sample shows
 ├── Looks/                    # Demo look library (JSON)
+├── Shows/                    # Test shows (JSON timelines)
 ├── tests/                    # pytest suite
 ├── tools/                    # helpers (install_abletonosc.ps1)
 ├── docs/                     # LaTeX manual + compiled PDF
