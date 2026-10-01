@@ -210,12 +210,12 @@ Le bouton \textbf{+ Favori} enregistre la couleur courante dans la palette de
 favoris ; un clic sur une pastille la rappelle. La croix \code{x} retire un
 favori. La liste est persistée dans les réglages (32 favoris maximum).
 
-\section{Position et orientation}
+\section{Orientation}
 
-Les curseurs \textbf{Pan} et \textbf{Tilt} pilotent les canaux DMX 3 et 5. Les
-quatre réglages suivants (\emph{Angle du faisceau}, \emph{Position X},
-\emph{Position Z}, \emph{Hauteur Y}) ne sont \textbf{pas} envoyés au DMX : ils
-paramètrent uniquement la visualisation 3D, pour se représenter la scène.
+Les projecteurs du patch sont \textbf{fixes} : ils n'ont ni pan ni tilt (aucune
+tête mobile). Leur direction se règle une fois, au montage, par le champ
+\code{angle} de chaque appareil dans le patch. L'onglet Direct ne propose donc
+plus de réglage de position ni d'orientation.
 
 \section{Les modes}
 

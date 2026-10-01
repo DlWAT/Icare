@@ -120,7 +120,7 @@ function updatePreview() {
   const hex = rgbToHex(r, g, b);
   const prev = document.getElementById('color-preview');
   if (prev) prev.style.background = hex;
-  ['r', 'g', 'b', 'amp', 'pan', 'tilt'].forEach((k) => {
+  ['r', 'g', 'b', 'amp'].forEach((k) => {
     const span = document.getElementById('val-' + k);
     if (span) span.textContent = $val('range-' + k);
   });
@@ -128,13 +128,13 @@ function updatePreview() {
 
 async function sendValues() {
   const r = $val('range-r'), g = $val('range-g'), b = $val('range-b');
-  const amp = $val('range-amp'), pan = $val('range-pan'), tilt = $val('range-tilt');
-  await postJSON('/api/experiment/set-values', { r, g, b, amp, pan, tilt });
+  const amp = $val('range-amp');
+  await postJSON('/api/experiment/set-values', { r, g, b, amp });
 }
 
 function bindExperiment() {
   // Slider bindings
-  const sliderIds = ['range-r', 'range-g', 'range-b', 'range-amp', 'range-pan', 'range-tilt'];
+  const sliderIds = ['range-r', 'range-g', 'range-b', 'range-amp'];
   for (const id of sliderIds) {
     const el = document.getElementById(id);
     if (!el) continue;
