@@ -1155,18 +1155,38 @@ uniform vec3 uColor;
 uniform float uIntensity;
 uniform float uLength;
 uniform float uPower;
+uniform float uHard;
 void main() {
-  float core = pow(max(0.0, 1.0 - vNR), uPower);
+  float nr = clamp(vNR, 0.0, 1.0);
+  // soft: gradient from the axis to nothing at the rim (soft fixtures)
+  float soft = pow(max(0.0, 1.0 - nr), uPower);
+  // hard: nearly constant until the rim, then a defined edge (Q-Spot)
+  float hard = smoothstep(1.0, 0.82, nr);
+  float edge = mix(soft, hard, uHard);
   float axial = (1.0 - smoothstep(0.72, 1.0, vD / uLength)) * (0.35 + 0.65 * (1.0 - vD / uLength));
-  float a = uIntensity * core * axial;
+  float a = uIntensity * edge * axial;
   gl_FragColor = vec4(uColor * a, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
 
-// Relative brightness and core tightness per fixture family.
-const BEAM_GAIN = { pars: 0.16, wash: 0.075, spots: 0.26, fx: 0.0 };
-const BEAM_POWER = { pars: 1.9, wash: 1.15, spots: 2.8, fx: 2.0 };
+// Per fixture family: relative brightness, edge softness and how "hard" the
+// contour is. Only the Q-Spot gets a defined edge.
+const BEAM_GAIN = { pars: 0.16, wash: 0.06, spots: 0.26, fx: 0.0 };
+const BEAM_POWER = { pars: 1.6, wash: 0.9, spots: 1.6, fx: 2.0 };
+const BEAM_HARD = { pars: 0.12, wash: 0.0, spots: 1.0, fx: 0.0 };
+
+// Linear fixtures emit a fan, not a round cone: half-angle per metre along the
+// bar axis (kA, wide) and across it (kB, narrow).
+const BEAM_FAN = { wild_wash_132_6ch: { kA: 0.85, kB: 0.34 } };
+
+// Body shape and emitter look per profile.
+const BODY = {
+  rgbwa_par_5ch: { w: 0.36, h: 0.30, d: 0.36, emitter: 'disc' },
+  wild_wash_132_6ch: { w: 1.30, h: 0.12, d: 0.14, emitter: 'bar' },
+  cameo_qspot40_9ch: { w: 0.30, h: 0.30, d: 0.42, emitter: 'lens' },
+  stairville_mfog1500_3ch: { w: 0.60, h: 0.50, d: 0.60, emitter: 'none' },
+};
 
 function setupStage3D() {
   const container = document.getElementById('stage3d');
@@ -1274,6 +1294,7 @@ function buildStageFixtures(patch) {
   Object.values(st.fixtures).forEach((f) => {
     st.scene.remove(f.beam);
     st.scene.remove(f.body);
+    if (f.emitter) st.scene.remove(f.emitter);
     if (f.pool) st.scene.remove(f.pool);
   });
   st.fixtures = {};
@@ -1284,50 +1305,82 @@ function buildStageFixtures(patch) {
   patch.forEach((f) => {
     const isFog = f.group === 'fx';
     const y = isFog ? 0.35 : Y;
+    const spec = BODY[f.profile] || BODY.rgbwa_par_5ch;
+    const yaw = THREE.MathUtils.degToRad(f.angle || 0);
 
+    // ----- body -----
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.3, 0.42),
+      new THREE.BoxGeometry(spec.w, spec.h, spec.d),
       new THREE.MeshStandardMaterial({ color: 0x22252b, roughness: 0.85, metalness: 0.15 }),
     );
     body.position.set(f.x, y, f.z);
+    if (spec.emitter !== 'bar') body.rotation.y = yaw;
     st.scene.add(body);
 
-    const a = THREE.MathUtils.degToRad(f.angle || 0);
-    const dir = new THREE.Vector3(Math.sin(a), -0.32, Math.cos(a)).normalize();
+    // ----- emitter (visible LEDs / lens), coloured -----
+    let emitter = null;
+    if (spec.emitter === 'disc' || spec.emitter === 'lens') {
+      emitter = new THREE.Mesh(
+        new THREE.CircleGeometry(Math.min(spec.w, spec.h) * 0.32, 24),
+        new THREE.MeshBasicMaterial({ color: 0x000000 }),
+      );
+      const off = new THREE.Vector3(0, 0, spec.d / 2 + 0.006)
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+      emitter.position.set(f.x, y, f.z).add(off);
+      emitter.rotation.y = yaw;
+      st.scene.add(emitter);
+    } else if (spec.emitter === 'bar') {
+      emitter = new THREE.Mesh(
+        new THREE.BoxGeometry(spec.w * 0.98, spec.h * 0.45, 0.02),
+        new THREE.MeshBasicMaterial({ color: 0x000000 }),
+      );
+      emitter.position.set(f.x, y, f.z + spec.d / 2 + 0.012);
+      st.scene.add(emitter);
+    }
 
-    const beamDeg = f.beamAngle || 25;
-    const tanHalf = Math.tan(THREE.MathUtils.degToRad(beamDeg) / 2);
+    // ----- beam -----
+    const dir = new THREE.Vector3(Math.sin(yaw), -0.32, Math.cos(yaw)).normalize();
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(f.beamAngle || 25) / 2);
+    const fan = BEAM_FAN[f.profile];
+    const kA = fan ? fan.kA : tanHalf; // half-width per metre, along the bar
+    const kB = fan ? fan.kB : tanHalf; // half-width per metre, across it
 
-    // The beam stops where it meets the floor.
     const tFloor = dir.y < -0.001 ? y / (-dir.y) : Infinity;
-    const length = Math.max(1.0, Math.min(REACH, tFloor));
-    const radius = Math.max(0.08, length * tanHalf);
+    const length = isFog ? 0.001 : Math.max(1.0, Math.min(REACH, tFloor));
+
+    // Explicit basis: local +Y = beam axis, local +X = wide (horizontal) axis.
+    const up = dir.clone().negate().normalize();
+    const ref = new THREE.Vector3(1, 0, 0);
+    const wide = ref.clone().sub(up.clone().multiplyScalar(ref.dot(up)));
+    if (wide.lengthSq() < 1e-6) wide.set(0, 0, 1).sub(up.clone().multiplyScalar(up.z));
+    wide.normalize();
+    const narrow = new THREE.Vector3().crossVectors(wide, up).normalize();
 
     const uniforms = {
       uColor: { value: new THREE.Color(0xffffff) },
       uIntensity: { value: 0 },
-      uLength: { value: length },
-      uRadius: { value: radius },
-      uPower: { value: BEAM_POWER[f.group] || 1.9 },
+      uLength: { value: 1 },
+      uRadius: { value: 1 },
+      uPower: { value: BEAM_POWER[f.group] || 1.6 },
+      uHard: { value: BEAM_HARD[f.group] || 0.0 },
     };
     const beam = new THREE.Mesh(
-      new THREE.ConeGeometry(radius, length, 32, 1, true),
+      new THREE.ConeGeometry(1, 1, 48, 1, true),
       new THREE.ShaderMaterial({
         uniforms, vertexShader: BEAM_VERTEX, fragmentShader: BEAM_FRAGMENT,
         transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
       }),
     );
     beam.visible = false;
-    beam.quaternion.copy(
-      new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().negate()),
-    );
+    beam.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(wide, up, narrow));
+    beam.scale.set(kA * length, length, kB * length);
     const pos = new THREE.Vector3(f.x, y, f.z);
     beam.position.copy(pos).addScaledVector(dir, length / 2);
     st.scene.add(beam);
 
-    // Light pool on the floor where the beam lands.
+    // ----- light pool on the floor -----
     let pool = null;
-    if (f.group !== 'fx' && isFinite(tFloor) && tFloor > 0.1) {
+    if (!isFog && isFinite(tFloor) && tFloor > 0.1) {
       const end = Math.min(tFloor, length);
       pool = new THREE.Mesh(
         new THREE.CircleGeometry(1, 40),
@@ -1339,15 +1392,15 @@ function buildStageFixtures(patch) {
       pool.rotation.x = -Math.PI / 2;
       const fp = pos.clone().addScaledVector(dir, end);
       pool.position.set(fp.x, 0.02, fp.z);
-      const pr = Math.max(0.3, end * tanHalf * 1.15);
-      pool.scale.set(pr, pr, 1);
+      pool.scale.set(Math.max(0.3, end * kA * 1.1), Math.max(0.3, end * kB * 1.1), 1);
       pool.visible = false;
       st.scene.add(pool);
     }
 
     st.fixtures[f.name] = {
-      body, beam, pool, color: new THREE.Color(0x000000), intensity: 0,
-      pos, dir, tanHalf, length, isFog,
+      body, beam, pool, emitter,
+      color: new THREE.Color(0x000000), intensity: 0,
+      pos, dir, wide, narrow, kA, kB, length, isFog,
     };
   });
 }
@@ -1365,13 +1418,14 @@ function computeSmokeLight(p, st) {
     const vz = p.z - fx.pos.z;
     const t = vx * fx.dir.x + vy * fx.dir.y + vz * fx.dir.z;
     if (t < 0.2 || t > fx.length) continue;
-    const px = vx - t * fx.dir.x;
-    const py = vy - t * fx.dir.y;
-    const pz = vz - t * fx.dir.z;
-    const r = Math.sqrt(px * px + py * py + pz * pz);
-    const maxR = t * fx.tanHalf;
-    if (r > maxR) continue;
-    const radial = 1 - r / Math.max(0.001, maxR);
+    // elliptical / linear cross-section (bar wash) rather than a circle
+    const a = vx * fx.wide.x + vy * fx.wide.y + vz * fx.wide.z;
+    const b = vx * fx.narrow.x + vy * fx.narrow.y + vz * fx.narrow.z;
+    const ax = Math.max(0.001, t * fx.kA);
+    const az = Math.max(0.001, t * fx.kB);
+    const e = (a * a) / (ax * ax) + (b * b) / (az * az);
+    if (e > 1) continue;
+    const radial = 1 - Math.sqrt(e);
     const axial = 1 - t / fx.length;
     const contrib = fx.intensity * radial * radial * (0.35 + 0.65 * axial);
     R += fx.color.r * contrib;
@@ -1419,8 +1473,8 @@ function updateStage(snap) {
       fx.pool.material.opacity = Math.min(0.5, intensity * 0.42);
       fx.pool.visible = intensity > 0.02;
     }
-    if (fx.body.material.emissive) {
-      fx.body.material.emissive.copy(fx.color).multiplyScalar(0.5 * intensity);
+    if (fx.emitter) {
+      fx.emitter.material.color.copy(fx.color).multiplyScalar(0.25 + 0.75 * intensity);
     }
   });
 }
