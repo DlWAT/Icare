@@ -1085,6 +1085,9 @@ function bindShow() {
   document.getElementById('smoke-visible')?.addEventListener('change', (e) => {
     if (window.__stage) window.__stage.smokeOn = e.target.checked;
   });
+  document.getElementById('stage-exposure')?.addEventListener('input', (e) => {
+    if (window.__stage) window.__stage.renderer.toneMappingExposure = Number(e.target.value);
+  });
 }
 
 /* ============================================================================
@@ -1113,6 +1116,58 @@ function makeSmokeTexture() {
   return tex;
 }
 
+function makePoolTexture() {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d');
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,0.30)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// Volumetric beam: soft radial falloff, distance falloff, brightest near the
+// source. No hard cone edges, no flat fill.
+const BEAM_VERTEX = `
+varying float vNR;
+varying float vD;
+uniform float uLength;
+uniform float uRadius;
+void main() {
+  float h = uLength;
+  float d = (h * 0.5) - position.y;                 // 0 at apex, h at base
+  float localR = max(0.0001, uRadius * d / h);
+  vNR = clamp(length(position.xz) / localR, 0.0, 1.0);
+  vD = d;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const BEAM_FRAGMENT = `
+varying float vNR;
+varying float vD;
+uniform vec3 uColor;
+uniform float uIntensity;
+uniform float uLength;
+uniform float uPower;
+void main() {
+  float core = pow(max(0.0, 1.0 - vNR), uPower);
+  float axial = (1.0 - smoothstep(0.72, 1.0, vD / uLength)) * (0.35 + 0.65 * (1.0 - vD / uLength));
+  float a = uIntensity * core * axial;
+  gl_FragColor = vec4(uColor * a, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+// Relative brightness and core tightness per fixture family.
+const BEAM_GAIN = { pars: 0.16, wash: 0.075, spots: 0.26, fx: 0.0 };
+const BEAM_POWER = { pars: 1.9, wash: 1.15, spots: 2.8, fx: 2.0 };
+
 function setupStage3D() {
   const container = document.getElementById('stage3d');
   if (!container || typeof THREE === 'undefined') return;
@@ -1126,11 +1181,16 @@ function setupStage3D() {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(container.clientWidth, container.clientHeight);
+  // Physical-ish response: highlights roll off instead of clipping to white.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.innerHTML = '';
   container.appendChild(renderer.domElement);
 
-  scene.add(new THREE.AmbientLight(0x556677, 1.4));
-  scene.add(new THREE.HemisphereLight(0x334455, 0x111111, 0.7));
+  // A dark room: only the beams, their floor pools and the lit smoke glow.
+  scene.add(new THREE.AmbientLight(0x2a2f38, 0.25));
+  scene.add(new THREE.HemisphereLight(0x1b2026, 0x05070a, 0.15));
 
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(50, 40),
@@ -1151,6 +1211,7 @@ function setupStage3D() {
   scene.add(wall);
 
   const tex = makeSmokeTexture();
+  const poolTex = makePoolTexture();
   const smoke = [];
   for (let i = 0; i < 110; i++) {
     const mat = new THREE.SpriteMaterial({
@@ -1195,9 +1256,9 @@ function setupStage3D() {
   });
 
   window.__stage = {
-    scene, camera, renderer, smoke,
+    scene, camera, renderer, smoke, poolTex,
     fixtures: {},
-    fogPos: new THREE.Vector3(4.5, 0.35, 3.2),
+    fogPos: new THREE.Vector3(0, 0.35, 1.5),
     level: 0,
     smokeOn: true,
     last: 0,
@@ -1213,19 +1274,20 @@ function buildStageFixtures(patch) {
   Object.values(st.fixtures).forEach((f) => {
     st.scene.remove(f.beam);
     st.scene.remove(f.body);
+    if (f.pool) st.scene.remove(f.pool);
   });
   st.fixtures = {};
 
-  const Y = 2.2; // fixtures on stands
-  const L = 9;   // beam reach (metres)
+  const Y = 2.2;    // fixtures on stands
+  const REACH = 10; // maximum beam reach (metres)
 
   patch.forEach((f) => {
     const isFog = f.group === 'fx';
     const y = isFog ? 0.35 : Y;
 
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 0.32, 0.45),
-      new THREE.MeshStandardMaterial({ color: 0x2b2f37, roughness: 0.7, metalness: 0.2 }),
+      new THREE.BoxGeometry(0.42, 0.3, 0.42),
+      new THREE.MeshStandardMaterial({ color: 0x22252b, roughness: 0.85, metalness: 0.15 }),
     );
     body.position.set(f.x, y, f.z);
     st.scene.add(body);
@@ -1235,13 +1297,24 @@ function buildStageFixtures(patch) {
 
     const beamDeg = f.beamAngle || 25;
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(beamDeg) / 2);
-    const radius = Math.max(0.12, L * tanHalf);
 
+    // The beam stops where it meets the floor.
+    const tFloor = dir.y < -0.001 ? y / (-dir.y) : Infinity;
+    const length = Math.max(1.0, Math.min(REACH, tFloor));
+    const radius = Math.max(0.08, length * tanHalf);
+
+    const uniforms = {
+      uColor: { value: new THREE.Color(0xffffff) },
+      uIntensity: { value: 0 },
+      uLength: { value: length },
+      uRadius: { value: radius },
+      uPower: { value: BEAM_POWER[f.group] || 1.9 },
+    };
     const beam = new THREE.Mesh(
-      new THREE.ConeGeometry(radius, L, 28, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: 0xffffff, transparent: true, opacity: 0,
-        depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      new THREE.ConeGeometry(radius, length, 32, 1, true),
+      new THREE.ShaderMaterial({
+        uniforms, vertexShader: BEAM_VERTEX, fragmentShader: BEAM_FRAGMENT,
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
       }),
     );
     beam.visible = false;
@@ -1249,12 +1322,32 @@ function buildStageFixtures(patch) {
       new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().negate()),
     );
     const pos = new THREE.Vector3(f.x, y, f.z);
-    beam.position.copy(pos).addScaledVector(dir, L / 2);
+    beam.position.copy(pos).addScaledVector(dir, length / 2);
     st.scene.add(beam);
 
+    // Light pool on the floor where the beam lands.
+    let pool = null;
+    if (f.group !== 'fx' && isFinite(tFloor) && tFloor > 0.1) {
+      const end = Math.min(tFloor, length);
+      pool = new THREE.Mesh(
+        new THREE.CircleGeometry(1, 40),
+        new THREE.MeshBasicMaterial({
+          map: st.poolTex, color: 0xffffff, transparent: true, opacity: 0,
+          depthWrite: false, blending: THREE.AdditiveBlending,
+        }),
+      );
+      pool.rotation.x = -Math.PI / 2;
+      const fp = pos.clone().addScaledVector(dir, end);
+      pool.position.set(fp.x, 0.02, fp.z);
+      const pr = Math.max(0.3, end * tanHalf * 1.15);
+      pool.scale.set(pr, pr, 1);
+      pool.visible = false;
+      st.scene.add(pool);
+    }
+
     st.fixtures[f.name] = {
-      body, beam, color: new THREE.Color(0x000000), intensity: 0,
-      pos, dir, tanHalf, length: L, isFog,
+      body, beam, pool, color: new THREE.Color(0x000000), intensity: 0,
+      pos, dir, tanHalf, length, isFog,
     };
   });
 }
@@ -1317,11 +1410,17 @@ function updateStage(snap) {
 
     fx.color.setRGB(R, G, B);
     fx.intensity = intensity;
-    fx.beam.material.color.copy(fx.color);
-    fx.beam.material.opacity = Math.min(0.5, 0.06 + 0.5 * intensity);
-    fx.beam.visible = intensity > 0.03;
+    const gain = BEAM_GAIN[f.group] !== undefined ? BEAM_GAIN[f.group] : 0.16;
+    fx.beam.material.uniforms.uColor.value.copy(fx.color);
+    fx.beam.material.uniforms.uIntensity.value = intensity * gain;
+    fx.beam.visible = intensity > 0.02;
+    if (fx.pool) {
+      fx.pool.material.color.copy(fx.color);
+      fx.pool.material.opacity = Math.min(0.5, intensity * 0.42);
+      fx.pool.visible = intensity > 0.02;
+    }
     if (fx.body.material.emissive) {
-      fx.body.material.emissive.copy(fx.color).multiplyScalar(0.8 * intensity);
+      fx.body.material.emissive.copy(fx.color).multiplyScalar(0.5 * intensity);
     }
   });
 }
@@ -1392,7 +1491,7 @@ function stageAnimate() {
     const litAmount = Math.min(1, lit.total);
     const fadeIn = Math.min(1, t * 7);
     const fadeOut = 1 - Math.max(0, (t - 0.35) / 0.65);
-    p.sprite.material.opacity = fadeIn * fadeOut * (0.035 + 0.6 * litAmount);
+    p.sprite.material.opacity = fadeIn * fadeOut * (0.02 + 0.42 * litAmount);
   });
 
   st.renderer.render(st.scene, st.camera);
