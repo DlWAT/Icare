@@ -18,7 +18,7 @@ The app runs entirely on your machine; the browser at
 | **Direct**   | Live RGB / amplitude / pan / tilt sliders, color picker, favourite-color palette, blackout, random colors, strobe overlay, **rainbow / fire / police / chase** procedural effects, **microphone audio-reactive** mode, real-time 3D visualization. |
 | **Séquence** | Visual editor for a beat-by-beat show. Insert *Uniform*, *Fade* and *Strobe* effects per fixture, save/load JSON files, accepts both the modern and the legacy schema. |
 | **Live**     | Loads a saved sequence and walks through it at a configurable BPM with a **tap-tempo** button, transport controls, progress bar and a 3D beam visualization mirroring the DMX output. |
-| **Show**     | Multi-fixture **patch** (11 fixtures), **looks** (static light states you author in the browser) and a link to **Ableton Live**: each Ableton scene triggers a look. Uses the AbletonOSC remote script. |
+| **Show**     | Multi-fixture **patch** (11 fixtures), **looks** (static light states you author in the browser), a **3D simulation** of the whole stage with **fluid smoke**, and a link to **Ableton Live**: each Ableton scene triggers a look. Uses the AbletonOSC remote script. |
 | **Topbar**   | Live DMX connection status indicator and a **dark/light theme** toggle. Settings (theme, last port, base channel, favourites) are persisted to disk. |
 
 ### Ableton Live link
@@ -35,6 +35,11 @@ Icare can follow Ableton Live with the free **AbletonOSC** remote script:
 
 The link uses OSC over localhost (send to `:11000`, listen on `:11001`); no
 Ableton running simply leaves the link "disconnected".
+
+The repository ships a demo look library in `Looks/` (all fixtures + fog) and a
+ready-made scene mapping in `scenes.json`, matching the studio template scenes
+(`INTRO`, `A`, `B`, `CHORUS`, `BREAK`, `SOLO`, `OUTRO`). The Show tab also
+renders the whole rig in 3D, so you can design shows without any hardware.
 
 ---
 
@@ -192,6 +197,7 @@ Icare/
 │       ├── app.js
 │       └── vendor/three.min.js
 ├── Sequences/                # Sample shows
+├── Looks/                    # Demo look library (JSON)
 ├── tests/                    # pytest suite
 ├── tools/                    # helpers (install_abletonosc.ps1)
 ├── docs/                     # LaTeX manual + compiled PDF

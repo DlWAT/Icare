@@ -1,0 +1,8 @@
+{
+  "name": "INTRO",
+  "targets": {
+    "pars": { "r": 0, "g": 40, "b": 255, "dimmer": 120 },
+    "wash": { "r": 0, "g": 20, "b": 180, "dimmer": 90 }
+  },
+  "fog": { "level": 0 }
+}

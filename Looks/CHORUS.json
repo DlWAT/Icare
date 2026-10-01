@@ -1,0 +1,9 @@
+{
+  "name": "CHORUS",
+  "targets": {
+    "pars": { "r": 255, "g": 255, "b": 255, "dimmer": 255 },
+    "wash": { "r": 255, "g": 200, "b": 120, "dimmer": 255 },
+    "spots": { "r": 255, "g": 255, "b": 255, "dimmer": 255 }
+  },
+  "fog": { "level": 150 }
+}

@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "mapping": {
+    "INTRO": "INTRO",
+    "A": "A",
+    "B": "B",
+    "CHORUS": "CHORUS",
+    "BREAK": "BREAK",
+    "SOLO": "SOLO",
+    "OUTRO": "OUTRO"
+  }
+}

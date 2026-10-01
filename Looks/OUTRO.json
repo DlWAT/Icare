@@ -1,0 +1,8 @@
+{
+  "name": "OUTRO",
+  "targets": {
+    "pars": { "r": 255, "g": 140, "b": 40, "dimmer": 70 },
+    "wash": { "r": 180, "g": 60, "b": 0, "dimmer": 60 }
+  },
+  "fog": { "level": 0 }
+}
