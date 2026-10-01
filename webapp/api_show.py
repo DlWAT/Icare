@@ -108,7 +108,7 @@ def api_looks_apply():
     # Either apply a saved look by name, or an inline look from the editor.
     if isinstance(payload.get("look"), dict):
         look = Look.from_dict(payload["look"])
-        dmx.apply_look(resolve(look, dmx.patch))
+        dmx.apply_look(resolve(look, dmx.patch), motion=look.motion)
         if look.fog:
             dmx.set_fog(**look.fog)
         scene_engine.active_look = look.name or None

@@ -37,12 +37,16 @@ class Look:
     name: str
     targets: dict[str, dict[str, int]] = field(default_factory=dict)
     fog: dict[str, int] = field(default_factory=dict)
+    # Optional animation, so a look evolves instead of staying fixed:
+    #   {"type": "pulse"|"wave"|"hue"|"flicker", "speed": 1.0, "amount": 0.35}
+    motion: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "targets": self.targets,
             "fog": self.fog,
+            "motion": self.motion,
         }
 
     @classmethod
@@ -52,7 +56,15 @@ class Look:
             if isinstance(state, dict):
                 targets[str(key)] = {str(k): int(v) for k, v in state.items()}
         fog = {str(k): int(v) for k, v in (raw.get("fog") or {}).items()}
-        return cls(name=str(raw.get("name", "")), targets=targets, fog=fog)
+
+        motion: dict[str, Any] = {}
+        raw_motion = raw.get("motion")
+        if isinstance(raw_motion, dict) and raw_motion.get("type"):
+            motion["type"] = str(raw_motion["type"])
+            for key in ("speed", "amount"):
+                if key in raw_motion:
+                    motion[key] = float(raw_motion[key])
+        return cls(name=str(raw.get("name", "")), targets=targets, fog=fog, motion=motion)
 
 
 # ---------------------------------------------------------------------------

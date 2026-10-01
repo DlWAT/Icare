@@ -75,6 +75,19 @@
         <label>Strobe <input type="number" id="look-strobe" min="0" max="255" value="0" /></label>
         <button id="btn-look-addtarget" class="btn-small">+ Cible</button>
       </div>
+      <div class="row">
+        <label>Mouvement
+          <select id="look-motion">
+            <option value="">Fixe</option>
+            <option value="pulse">Respiration</option>
+            <option value="wave">Vague / chenillard</option>
+            <option value="hue">Rotation de teinte</option>
+            <option value="flicker">Scintillement</option>
+          </select>
+        </label>
+        <label>Vitesse <input type="number" id="look-motion-speed" min="0" step="0.05" value="0.5" /></label>
+        <label>Amplitude <input type="number" id="look-motion-amount" min="0" max="1" step="0.05" value="0.35" /></label>
+      </div>
       <div id="look-targets" class="look-targets"></div>
       <div class="row">
         <button id="btn-look-save" class="btn-primary">Sauvegarder</button>

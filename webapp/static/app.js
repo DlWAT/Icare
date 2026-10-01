@@ -879,7 +879,27 @@ function setupLive3D() {
  * ============================================================================ */
 
 function bindShow() {
-  const state = { look: { name: '', targets: {}, fog: {} }, looks: [], patch: [], groups: [], fixtures: [] };
+  const state = { look: { name: '', targets: {}, fog: {}, motion: {} }, looks: [], patch: [], groups: [], fixtures: [] };
+
+  function readMotion() {
+    const type = document.getElementById('look-motion')?.value;
+    if (!type) return {};
+    return {
+      type,
+      speed: Number($val('look-motion-speed')) || 0.5,
+      amount: Number($val('look-motion-amount')) || 0.35,
+    };
+  }
+
+  function setMotionControls(motion) {
+    const m = motion || {};
+    const type = document.getElementById('look-motion');
+    const speed = document.getElementById('look-motion-speed');
+    const amount = document.getElementById('look-motion-amount');
+    if (type) type.value = m.type || '';
+    if (speed) speed.value = m.speed ?? 0.5;
+    if (amount) amount.value = m.amount ?? 0.35;
+  }
 
   function targetOptions() {
     const sel = document.getElementById('look-target');
@@ -978,8 +998,14 @@ function bindShow() {
   async function loadLook(name) {
     const r = await getJSON(`/api/looks/load?name=${encodeURIComponent(name)}`);
     if (!r.ok) { toast(r.error || 'Erreur', 'error'); return; }
-    state.look = { name: r.look.name, targets: r.look.targets || {}, fog: r.look.fog || {} };
+    state.look = {
+      name: r.look.name,
+      targets: r.look.targets || {},
+      fog: r.look.fog || {},
+      motion: r.look.motion || {},
+    };
     document.getElementById('look-name').value = state.look.name;
+    setMotionControls(state.look.motion);
     renderTargets();
   }
 
@@ -1030,8 +1056,9 @@ function bindShow() {
   });
 
   document.getElementById('btn-look-new')?.addEventListener('click', () => {
-    state.look = { name: '', targets: {}, fog: {} };
+    state.look = { name: '', targets: {}, fog: {}, motion: {} };
     document.getElementById('look-name').value = '';
+    setMotionControls({});
     renderTargets();
   });
   document.getElementById('btn-look-addtarget')?.addEventListener('click', () => {
@@ -1047,11 +1074,13 @@ function bindShow() {
   document.getElementById('btn-look-save')?.addEventListener('click', async () => {
     state.look.name = document.getElementById('look-name').value.trim();
     if (!state.look.name) { toast('Nom de look requis', 'error'); return; }
+    state.look.motion = readMotion();
     const r = await postJSON('/api/looks/save', state.look);
     if (r.ok) { toast(`Look « ${state.look.name} » sauvegardé`, 'success'); refresh(); }
     else toast(r.error || 'Erreur', 'error');
   });
   document.getElementById('btn-look-apply')?.addEventListener('click', async () => {
+    state.look.motion = readMotion();
     const r = await postJSON('/api/looks/apply', { look: state.look });
     if (r.ok) toast('Look appliqué', 'success', 1200);
   });
@@ -1065,7 +1094,7 @@ function bindShow() {
 
   // ---- 3D simulation ----
   setupStage3D();
-  setInterval(pollSim, 120);
+  setInterval(pollSim, 70);
 
   const fogSlider = document.getElementById('fog-level');
   const fogValue = document.getElementById('fog-value');

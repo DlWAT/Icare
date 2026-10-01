@@ -4,5 +4,6 @@
     "pars": { "r": 255, "g": 0, "b": 0, "dimmer": 90 },
     "wash": { "r": 180, "g": 0, "b": 0, "dimmer": 70 }
   },
-  "fog": { "level": 200 }
+  "fog": { "level": 200 },
+  "motion": { "type": "pulse", "speed": 0.6, "amount": 0.55 }
 }

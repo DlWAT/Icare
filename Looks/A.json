@@ -4,5 +4,6 @@
     "pars": { "r": 255, "g": 120, "b": 0, "dimmer": 200 },
     "wash": { "r": 255, "g": 80, "b": 0, "dimmer": 160 }
   },
-  "fog": { "level": 40 }
+  "fog": { "level": 40 },
+  "motion": { "type": "wave", "speed": 0.5, "amount": 0.45 }
 }

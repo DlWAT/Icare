@@ -50,7 +50,12 @@ def test_unknown_target_is_ignored():
 
 def test_save_load_round_trip(tmp_path):
     directory = str(tmp_path)
-    look = Look(name="refrain", targets={"*": {"b": 200}}, fog={"level": 120})
+    look = Look(
+        name="refrain",
+        targets={"*": {"b": 200}},
+        fog={"level": 120},
+        motion={"type": "wave", "speed": 0.5, "amount": 0.4},
+    )
     save_look(directory, look)
 
     assert "refrain" in list_looks(directory)
@@ -58,3 +63,5 @@ def test_save_load_round_trip(tmp_path):
     assert back.name == "refrain"
     assert back.targets["*"]["b"] == 200
     assert back.fog["level"] == 120
+    assert back.motion["type"] == "wave"
+    assert back.motion["speed"] == 0.5

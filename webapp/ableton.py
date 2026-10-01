@@ -306,7 +306,7 @@ class SceneEngine:
             self.last_error = f"look {look_name!r}: {exc}"
             logger.warning("Could not load look %r: %s", look_name, exc)
             return False
-        self.dmx.apply_look(resolve(look, self.dmx.patch))
+        self.dmx.apply_look(resolve(look, self.dmx.patch), motion=look.motion)
         if look.fog:
             self.dmx.set_fog(**look.fog)
         self.active_scene = scene if scene is not None else self.active_scene

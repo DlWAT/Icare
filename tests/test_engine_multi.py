@@ -82,6 +82,31 @@ def test_snapshot_has_positions_and_values():
     assert "fog" in snap and "master" in snap
 
 
+def test_apply_motion_pulse_scales_brightness():
+    c = make_engine()
+    state = {"r": 255, "g": 128, "b": 0}
+    motion = {"type": "pulse", "speed": 1.0, "amount": 1.0}
+    high = c._apply_motion(state, c.patch[0], 0.25, motion)
+    low = c._apply_motion(state, c.patch[0], 0.75, motion)
+    assert high["r"] == 255
+    assert low["r"] == 0
+
+
+def test_apply_motion_hue_rotates_colour():
+    c = make_engine()
+    state = {"r": 255, "g": 0, "b": 0}
+    out = c._apply_motion(state, c.patch[0], 2.0, {"type": "hue", "speed": 1.0})
+    assert out["g"] > 200  # red rotated by +120° -> green
+    assert out["r"] < 60
+
+
+def test_look_with_motion_is_animated():
+    c = make_engine()
+    c.apply_look({"Par1": {"r": 255, "g": 255, "b": 255}}, motion={"type": "pulse", "speed": 1.0})
+    assert c._look_motion is not None
+    assert c.look_enabled is True
+
+
 def test_apply_look_sets_per_fixture_state():
     c = make_engine()
     c.apply_look(

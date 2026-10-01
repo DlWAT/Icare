@@ -21,6 +21,7 @@ channels scaled by the amplitude instead.
 from __future__ import annotations
 
 import logging
+import math
 import os
 import random as _rnd
 import sys
@@ -109,8 +110,10 @@ class DMXController:
         # ---- Fog machine (independent of the light modes) ----
         self.fog: dict[str, int] = {"level": 0, "interval": 0, "duration": 0}
 
-        # ---- Current look (per-fixture static state) ----
+        # ---- Current look (per-fixture state + optional motion) ----
         self._look_state: dict[str, dict[str, int]] = {}
+        self._look_motion: dict[str, Any] | None = None
+        self._look_t0 = time.time()
 
         # ---- Last error (surfaced via /api/health) ----
         self.last_error: str | None = None
@@ -246,14 +249,78 @@ class DMXController:
                 values[fx.address + prof.index_of(FOG_DURATION)] = _clamp(self.fog["duration"])
 
     def _compose_look(self, values: dict[int, int]) -> None:
+        t = time.time() - self._look_t0
+        motion = self._look_motion
         for fx in self.patch:
             state = self._look_state.get(fx.name)
             if not state:
                 continue
+            if motion:
+                state = self._apply_motion(state, fx, t, motion)
             prof = fx.profile_obj
             for i, ch in enumerate(prof.channels):
                 if ch.fn in state:
                     values[fx.address + i] = _clamp(state[ch.fn])
+
+    def _apply_motion(
+        self,
+        state: dict[str, int],
+        fx: Fixture,
+        t: float,
+        motion: dict[str, Any],
+    ) -> dict[str, int]:
+        """Modulate a static look over time so the scene keeps moving."""
+        mtype = str(motion.get("type", "")).lower()
+        speed = float(motion.get("speed", 1.0) or 1.0)
+        amount = max(0.0, min(1.0, float(motion.get("amount", 0.35) or 0.35)))
+        if not mtype or amount <= 0:
+            return state
+
+        phase = t * speed
+        out = dict(state)
+
+        if mtype == "hue":
+            r, g, b = out.get(R, 0), out.get(G, 0), out.get(B, 0)
+            h, s, v = self._rgb_to_hsv(r, g, b)
+            nr, ng, nb = self._hsv_to_rgb((h + phase * 60.0) % 360, s, v)
+            for fn, value in ((R, nr), (G, ng), (B, nb)):
+                if fn in out:
+                    out[fn] = _clamp(value)
+            return out
+
+        if mtype == "flicker":
+            k = 1.0 - amount * _rnd.random()
+        elif mtype in ("wave", "chase"):
+            offset = fx.x * 0.9  # spatial phase: travels across the stage
+            k = 1.0 - amount + amount * (0.5 + 0.5 * math.sin(2 * math.pi * phase - offset))
+        elif mtype == "pulse":
+            k = 1.0 - amount + amount * (0.5 + 0.5 * math.sin(2 * math.pi * phase))
+        else:
+            return state
+
+        if DIMMER in out:
+            out[DIMMER] = _clamp(out[DIMMER] * k)
+        else:
+            for fn in (R, G, B, W, A):
+                if fn in out:
+                    out[fn] = _clamp(out[fn] * k)
+        return out
+
+    @staticmethod
+    def _rgb_to_hsv(r: int, g: int, b: int) -> tuple[float, float, float]:
+        r, g, b = r / 255.0, g / 255.0, b / 255.0
+        mx, mn = max(r, g, b), min(r, g, b)
+        d = mx - mn
+        if d == 0:
+            h = 0.0
+        elif mx == r:
+            h = (60 * ((g - b) / d)) % 360
+        elif mx == g:
+            h = 60 * ((b - r) / d) + 120
+        else:
+            h = 60 * ((r - g) / d) + 240
+        s = 0.0 if mx == 0 else d / mx
+        return h % 360, s, mx
 
     def _compose_generative(self, values: dict[int, int], strobe: int = 0) -> None:
         for fx in self.patch:
@@ -525,9 +592,15 @@ class DMXController:
     # ------------------------------------------------------------------
     # Looks
     # ------------------------------------------------------------------
-    def apply_look(self, fixture_states: dict[str, dict[str, int]]) -> None:
-        """Show a static per-fixture state (used by the scene engine)."""
+    def apply_look(
+        self,
+        fixture_states: dict[str, dict[str, int]],
+        motion: dict[str, Any] | None = None,
+    ) -> None:
+        """Show a per-fixture state, optionally animated over time."""
         self._look_state = {k: dict(v) for k, v in fixture_states.items()}
+        self._look_motion = dict(motion) if motion else None
+        self._look_t0 = time.time()
         self._switch_mode(look=True)
         self._ensure_thread()
         self._render_with_overlay()
