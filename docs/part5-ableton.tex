@@ -1,0 +1,246 @@
+% =============================================================================
+%  PARTIE V — Des lumières pilotées par Ableton
+% =============================================================================
+
+\chapter{La refonte multi-projecteurs}
+\label{ch:multi}
+
+Le contrôleur d'origine ne pilotait qu'un seul projecteur. Pour produire de
+vrais jeux de lumière, \Icare{} gère désormais un \textbf{patch} complet : une
+liste de projecteurs, chacun décrit par un \emph{profil} (plan de canaux) et une
+\emph{adresse} de départ dans l'univers DMX.
+
+\section{Les profils de projecteurs}
+
+Un profil dit quel canal fait quoi. \Icare{} embarqué les profils suivants,
+qui correspondent au matériel :
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}llp{6.8cm}@{}}
+    \toprule
+    \textbf{Profil} & \textbf{Canaux} & \textbf{Détail} \\
+    \midrule
+    \code{rgbwa\_par\_5ch} & 5 & Rouge, Vert, Bleu, Blanc, Ambre. \\
+    \addlinespace
+    \code{wild\_wash\_132\_6ch} & 6 & Intensité, Strobe, Rouge, Vert, Bleu,
+      sensibilité son. \\
+    \addlinespace
+    \code{cameo\_qspot40\_9ch} & 9 & Intensité, intensité fine, Strobe, R, G, B,
+      Blanc, macro, température. \\
+    \addlinespace
+    \code{stairville\_mfog1500\_3ch} & 3 & Volume brouillard, intervalle, durée. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Profils livrés.}
+\end{table}
+
+\section{Le patch par défaut}
+
+Par défaut, les appareils sont posés à la suite à partir du canal 1 :
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}llcc@{}}
+    \toprule
+    \textbf{Appareil} & \textbf{Profil} & \textbf{Canal de départ} & \textbf{Canaux} \\
+    \midrule
+    ParLED1 \dots ParLED6 & RGBWA 5 canaux & 1, 6, 11, 16, 21, 26 & 5 \\
+    Wash1, Wash2 & Wild Wash 132 & 31, 37 & 6 \\
+    QSpot1, QSpot2 & Cameo Q-Spot 40 & 43, 52 & 9 \\
+    Fog & M-Fog 1500 & 61 & 3 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Patch par défaut (63 canaux utilisés).}
+  \label{tab:patch}
+\end{table}
+
+Le patch est validé au chargement : un profil inconnu, un chevauchement de
+canaux ou une adresse hors de l'univers sont refusés. Il vit dans
+\file{patch.json} à côté de l'exécutable et peut être modifié depuis l'API
+\api{POST /api/patch}.
+
+\section{Comment le rendu gère les différences}
+
+Chaque mode \og{}génératif\fg{} (couleur fixe, effets, aléatoire, audio)
+produit une couleur et une intensité globales. Le moteur l'écrit sur chaque
+projecteur :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item si le profil possède un \textbf{canal d'intensité}, il est écrit tel
+        quel et les couleurs en brut ;
+  \item sinon (PAR RGBWA 5 canaux), les couleurs sont \textbf{multipliées par
+        l'intensité} : c'est l'intensité qui pilote la luminosité.
+\end{itemize}
+
+Le brouillard possède ses propres canaux, indépendants des modes : on peut
+l'activer séparément via \api{POST /api/fog}.
+
+\begin{note}
+Le Q-Spot 40 et le Wild Wash sont des projecteurs \textbf{fixes} : leurs profils
+n'ont ni pan ni tilt. Les curseurs de position de l'onglet Direct ne servent
+donc qu'à la visualisation 3D.
+\end{note}
+
+\chapter{Les « looks »}
+\label{ch:looks}
+
+Un \textbf{look} est un état de lumière statique que l'on peut rappeler : une
+liste de cibles et, pour chacune, une couleur et une intensité.
+
+\section{Cibles}
+
+Une cible peut être :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \code{"*"} : tous les projecteurs ;
+  \item le nom d'un \textbf{groupe} (\code{pars}, \code{wash}, \code{spots},
+        \code{fx}) ;
+  \item le nom d'un \textbf{projecteur} précis (\code{QSpot1}, \code{Fog}\dots).
+\end{itemize}
+
+Les cibles sont fusionnées dans l'ordre \code{"*"}, puis le groupe, puis le
+nom : on met donc une base globale et on surcharge au besoin.
+
+\section{Résolution}
+
+\code{resolve()} transforme le look en valeurs de canaux concrètes. Pour un
+projecteur sans canal d'intensité, l'intensité demandée \og{}multiplie\fg{} les
+couleurs. Exemple de look :
+
+\begin{lstlisting}[language=json,caption={Un look : base bleue, projecteurs rouges.}]
+{
+  "name": "Refrain",
+  "targets": {
+    "pars":  { "r": 0, "g": 0, "b": 255, "dimmer": 220 },
+    "QSpot1": { "r": 255, "g": 80, "b": 0 }
+  },
+  "fog": { "level": 120 }
+}
+\end{lstlisting}
+
+Les looks sont de simples fichiers JSON dans \file{Looks/}, créés depuis
+l'onglet \textbf{Show} : on choisit un nom, une cible, une couleur et une
+intensité, puis on sauvegarde.
+
+\chapter{Le lien avec Ableton Live}
+\label{ch:ableton}
+
+\section{Principe}
+
+\Icare{} écoute Ableton Live par le réseau grâce au script distant gratuit
+\href{https://github.com/ideoforms/AbletonOSC}{AbletonOSC}. Aucun câble
+supplémentaire : tout passe en OSC sur \code{127.0.0.1}.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      node distance=10mm,
+      font=\small,
+      box/.style={draw=icodeln,fill=icodebg,rounded corners,inner sep=7pt,align=center},
+      flow/.style={-Latex,draw=icareblue,thick},
+    ]
+    \node[box] (abl) {Ableton Live\\\scriptsize + remote script AbletonOSC};
+    \node[box,right=2.4cm of abl] (icare) {\Icare{} (Python)\\\scriptsize moteur + moteur de scènes};
+    \node[box,right=2.4cm of icare] (dmx) {Enttec USB Pro\\\scriptsize $\rightarrow$ projecteurs};
+    \draw[flow] (abl) -- node[above,draw=none,fill=none,font=\scriptsize]{OSC :11000} node[below,draw=none,fill=none,font=\scriptsize]{tempo, scène, beat} (icare);
+    \draw[flow] (icare) -- node[above,draw=none,fill=none,font=\scriptsize]{DMX512} (dmx);
+    \draw[flow,dashed] (icare.north) to[out=120,in=60] node[above,draw=none,fill=none,font=\scriptsize]{réponses :11001} (abl.north);
+  \end{tikzpicture}
+  \caption{Boucle Ableton $\rightarrow$ \Icare{} $\rightarrow$ DMX.}
+\end{figure}
+
+Ce qu'\Icare{} observe en continu :
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    \textbf{Adresse OSC} & \textbf{Information} \\
+    \midrule
+    \api{/live/song/get/tempo} & Tempo (BPM). \\
+    \api{/live/song/get/is\_playing} & Lecture en cours. \\
+    \api{/live/view/get/selected\_scene} & Scène sélectionnée. \\
+    \api{/live/scene/get/name} & Nom de chaque scène. \\
+    \api{/live/song/get/beat} & Compteur de temps (beat events). \\
+    \bottomrule
+  \end{tabular}
+  \caption{Les principales données suivies.}
+\end{table}
+
+\section{Installation}
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Exécuter \file{tools\textbackslash install\_abletonosc.ps1} : le script
+        télécharge AbletonOSC et le copie dans
+        \file{Documents\textbackslash Ableton\textbackslash User Library\textbackslash Remote Scripts}.
+  \item Redémarrer Live.
+  \item \emph{Préférences $\rightarrow$ Link, Tempo \& MIDI} $\rightarrow$
+        Control Surface = \textbf{AbletonOSC}.
+  \item Dans \Icare{}, onglet \textbf{Show} $\rightarrow$ \textbf{Connecter
+        Ableton}. Le témoin passe au vert.
+\end{enumerate}
+
+\begin{note}
+Sans Ableton, le lien reste simplement \og{}déconnecté\fg{} : \Icare{} continue
+de fonctionner normalement.
+\end{note}
+
+\section{Mapper les scènes aux looks}
+
+L'onglet \textbf{Show} liste les scènes d'Ableton (récupérées via OSC). Pour
+chacune, on choisit le look à déclencher. Dès qu'une scène est sélectionnée ou
+lancée dans Ableton, \Icare{} applique le look correspondant.
+
+\begin{lstlisting}[caption={Mapping persistant (scenes.json).},numbers=none]
+{ "enabled": true,
+  "mapping": { "INTRO": "intro_bleu", "A": "couplet", "CHORUS": "refrain" } }
+\end{lstlisting}
+
+\section{Produire son show}
+
+Une méthode simple, adaptée au template Ableton du studio :
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Dans \Icare{}, créer un look par ambiance : \code{INTRO},
+        \code{A}, \code{B}, \code{CHORUS}, \code{BREAK}, \code{SOLO},
+        \code{OUTRO}.
+  \item Mapper chaque scène Ableton au look du même nom, une fois pour toutes.
+  \item En répétition ou en concert, il suffit de lancer les scènes dans
+        Ableton : les lumières suivent.
+  \item Réglage fin : le \emph{beat} d'Ableton pourra servir plus tard à caler
+        les effets (strobe sur le temps, chenillard à la mesure).
+\end{enumerate}
+
+\chapter{Architecture logicielle mise à jour}
+\label{ch:archi2}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{9cm}@{}}
+    \toprule
+    \textbf{Module} & \textbf{Rôle} \\
+    \midrule
+    \file{webapp/fixtures.py} & Profils de projecteurs et patch. \\
+    \file{webapp/looks.py} & Modèle de look, résolution, stockage. \\
+    \file{webapp/osc.py} & Encodeur/décodeur OSC minimal. \\
+    \file{webapp/ableton.py} & Client AbletonOSC + moteur de scènes. \\
+    \file{webapp/dmx\_controller.py} & Moteur multi-projecteurs (thread de sortie). \\
+    \file{webapp/api\_show.py} & API patch / looks / scènes / Ableton. \\
+    \file{webapp/templates/show.html} & Onglet Show. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Nouveaux modules de la refonte.}
+\end{table}
+
+Le moteur DMX garde la même surface publique qu'avant (\code{set\_values},
+\code{strobe}, \code{effect\_*,} \code{audio\_push}, \code{health}, \dots), mais
+les applique désormais au \textbf{patch entier}. Les anciennes fonctions de
+l'onglet Direct et le lecteur de séquences continuent donc de fonctionner.
+
+\begin{note}
+Le contrôleur par défaut écrivait une seule adresse de couleur. Il écrit
+maintenant une \emph{frame} complète : pour chaque projecteur, les canaux de son
+profil sont remplis, ce qui rend possible un rendu différent d'un appareil à
+l'autre.
+\end{note}
