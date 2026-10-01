@@ -1,0 +1,57 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+a = Analysis(
+    ['run_webapp.py'],
+    pathex=[],
+    binaries=[],
+    datas=[
+        ('webapp\\templates', 'webapp\\templates'),
+        ('webapp\\static', 'webapp\\static'),
+        ('Sequences', 'Sequences'),
+    ],
+    hiddenimports=[
+        'pydmxIcare',
+        'pydmxlight',
+        'webapp.config',
+        'webapp.services',
+        'webapp.pages',
+        'webapp.dsl',
+        'webapp.schemas',
+        'webapp.dmx_controller',
+        'webapp.live_player',
+        'webapp.api_experiment',
+        'webapp.api_sequence',
+        'webapp.api_live',
+        'webapp.api_health',
+        'webapp.api_palettes',
+        'webapp.api_settings',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='IcareWeb',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)

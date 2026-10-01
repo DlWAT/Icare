@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "icare-web"
+version = "0.2.0"
+description = "Browser-based DMX lighting controller for amateur music groups"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Icare contributors" }]
+keywords = ["dmx", "lighting", "flask", "music"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia",
+    "Framework :: Flask",
+]
+dependencies = [
+    "Flask>=3.0.0,<4.0.0",
+    "pyserial>=3.5",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+    "pyinstaller>=6.3",
+]
+
+[project.scripts]
+icare-web = "run_webapp:main"
+
+[project.urls]
+Repository = "https://github.com/DlWAT/Icare"
+
+[tool.setuptools]
+py-modules = ["pydmxIcare", "pydmxlight", "run_webapp"]
+
+[tool.setuptools.packages.find]
+include = ["webapp*"]
+
+# ----------------------------------------------------------------------------
+# Tooling
+# ----------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4"]
+ignore = [
+    "E501",  # line length handled by formatter
+    "B008",  # function calls in argument defaults are common in Flask
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

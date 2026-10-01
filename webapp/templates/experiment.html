@@ -10,9 +10,12 @@
             <h3>Connexion</h3>
             <div class="row">
               <label>Canal de base (R)
-                <input type="number" id="input-conn-channel" min="1" step="1" value="9" />
+                <input type="number" id="input-conn-channel" min="0" max="509" step="1" value="9" />
               </label>
-              <button id="btn-connect">Connexion DMX</button>
+              <label>Port (optionnel)
+                <input type="text" id="input-conn-port" placeholder="ex. COM3" />
+              </label>
+              <button id="btn-connect" class="btn-primary">Connexion DMX</button>
               <button id="btn-update-base">Mettre à jour canal de base</button>
             </div>
           </div>
@@ -21,18 +24,18 @@
             <h3>Paramètres</h3>
             <div class="row row-split">
               <div class="panel-sub panel-sub-slim">
-                <h4>Couleur & Intensité</h4>
+                <h4>Couleur &amp; Intensité</h4>
                 <div class="controls">
-                  <label>Rouge
+                  <label>Rouge <span class="val" id="val-r">0</span>
                     <input type="range" id="range-r" min="0" max="255" value="0" />
                   </label>
-                  <label>Vert
+                  <label>Vert <span class="val" id="val-g">0</span>
                     <input type="range" id="range-g" min="0" max="255" value="0" />
                   </label>
-                  <label>Bleu
+                  <label>Bleu <span class="val" id="val-b">0</span>
                     <input type="range" id="range-b" min="0" max="255" value="0" />
                   </label>
-                  <label>Amplitude
+                  <label>Amplitude <span class="val" id="val-amp">0</span>
                     <input type="range" id="range-amp" min="0" max="255" value="0" />
                   </label>
                   <label>Couleur
@@ -42,14 +45,21 @@
                 <div class="preview">
                   <div id="color-preview"></div>
                 </div>
+                <div class="palette-section">
+                  <div class="row">
+                    <button id="btn-fav-add" class="btn-small">+ Favori</button>
+                    <span class="muted small">Cliquez sur une pastille pour rappeler la couleur.</span>
+                  </div>
+                  <div id="favorite-colors" class="swatches"></div>
+                </div>
               </div>
               <div class="panel-sub panel-sub-slim">
-                <h4>Position & Orientation</h4>
+                <h4>Position &amp; Orientation</h4>
                 <div class="controls">
-                  <label>Pan
+                  <label>Pan <span class="val" id="val-pan">0</span>
                     <input type="range" id="range-pan" min="0" max="255" value="0" />
                   </label>
-                  <label>Tilt
+                  <label>Tilt <span class="val" id="val-tilt">0</span>
                     <input type="range" id="range-tilt" min="0" max="255" value="0" />
                   </label>
                   <label>Angle du faisceau (°)
@@ -75,7 +85,9 @@
             <h3>Modes</h3>
             <div class="row">
               <button id="btn-blackout" class="btn-danger">Blackout</button>
+              <button id="btn-stop">Stop</button>
             </div>
+
             <div class="panel-sub">
               <h4>Couleurs aléatoires</h4>
               <div class="row">
@@ -90,10 +102,11 @@
                 </label>
               </div>
               <div class="row">
-                <button id="btn-rand-start" class="btn-primary">Activer Couleurs Aléatoires</button>
+                <button id="btn-rand-start" class="btn-primary">Activer</button>
                 <button id="btn-rand-stop">Arrêter</button>
               </div>
             </div>
+
             <div class="panel-sub">
               <h4>Effet Strobe (overlay)</h4>
               <div class="row">
@@ -114,6 +127,45 @@
                 <button id="btn-strobe-overlay">Appliquer</button>
               </div>
             </div>
+
+            <div class="panel-sub">
+              <h4>Bibliothèque d'effets</h4>
+              <div class="row">
+                <label>Vitesse
+                  <input type="range" id="input-fx-speed" min="0.1" max="5" step="0.1" value="1" />
+                </label>
+                <label>Luminosité
+                  <input type="number" id="input-fx-bright" min="0" max="255" value="200" />
+                </label>
+              </div>
+              <div class="row effect-buttons">
+                <button data-effect="rainbow" class="btn-effect">Rainbow</button>
+                <button data-effect="fire" class="btn-effect">Fire</button>
+                <button data-effect="police" class="btn-effect">Police</button>
+                <button data-effect="chase" class="btn-effect">Chase RGB</button>
+                <button id="btn-fx-stop">Arrêter</button>
+              </div>
+            </div>
+
+            <div class="panel-sub">
+              <h4>Audio-réactif <span class="badge">Beta</span></h4>
+              <p class="muted small">Utilise le micro du navigateur pour piloter l'intensité au rythme de la musique.</p>
+              <div class="row">
+                <label>Sensibilité
+                  <input type="range" id="input-audio-gain" min="0.5" max="6" step="0.1" value="2" />
+                </label>
+                <label>Couleur
+                  <input type="color" id="audio-color" value="#ff7700" />
+                </label>
+              </div>
+              <div class="row">
+                <button id="btn-audio-start" class="btn-primary">Activer micro</button>
+                <button id="btn-audio-stop">Arrêter</button>
+              </div>
+              <div class="audio-meter" aria-hidden="true">
+                <div id="audio-level-bar"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -127,5 +179,4 @@
     </div>
   </div>
 </section>
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 {% endblock %}

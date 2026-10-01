@@ -1,0 +1,381 @@
+% =============================================================================
+%  PARTIE III — Documentation technique
+% =============================================================================
+
+\chapter{Architecture du projet}
+\label{ch:architecture}
+
+\section{Arborescence}
+
+\begin{lstlisting}[caption={Arborescence du dépôt.},numbers=none]
+Icare/
+|-- pydmxIcare.py          # bas niveau : trame Enttec + port serie
+|-- pydmxlight.py          # descripteurs de projecteurs (Par LED, Strobe)
+|-- run_webapp.py          # point d'entree (python run_webapp.py)
+|-- webapp/
+|   |-- __init__.py        # fabrique create_app()
+|   |-- config.py          # constantes, UserSettings, journalisation
+|   |-- services.py        # singletons (settings, dmx)
+|   |-- utils.py           # helpers partages (noms de fichiers surs)
+|   |-- dmx_controller.py  # machine a etats + thread de sortie DMX
+|   |-- live_player.py     # lecteur de sequence + tap-tempo
+|   |-- dsl.py             # analyseur du langage de sequences
+|   |-- schemas.py         # validation / migration des fichiers JSON
+|   |-- pages.py           # routes HTML
+|   |-- api_experiment.py  # API onglet Direct
+|   |-- api_sequence.py    # API editeur de sequence
+|   |-- api_live.py        # API lecture Live
+|   |-- api_health.py      # /api/health
+|   |-- api_palettes.py    # favoris + palettes nommees
+|   |-- api_settings.py    # preferences
+|   |-- templates/         # gabarits Jinja2
+|   `-- static/            # app.css, app.js, vendor/three.min.js
+|-- Sequences/             # shows d'exemple
+|-- tests/                 # suite pytest
+|-- docs/                  # cette documentation (LaTeX)
+|-- pyproject.toml         # build, ruff, pytest
+`-- build_exe.ps1          # paquetage PyInstaller
+\end{lstlisting}
+
+\section{La fabrique d'application}
+
+\code{create\_app()} construit et configure l'application Flask. Elle choisit
+le dossier des gabarits et des fichiers statiques selon qu'on tourne depuis les
+sources ou depuis un exécutable empaqueté (\code{sys.\_MEIPASS}), puis enregistre
+les \emph{blueprints} un par un :
+
+\begin{lstlisting}[language=Python,caption={Enregistrement des blueprints (\file{webapp/\_\_init\_\_.py}).}]
+from .pages import pages_bp
+from .api_experiment import api_experiment_bp
+...
+app.register_blueprint(pages_bp)
+app.register_blueprint(api_experiment_bp)
+app.register_blueprint(api_sequence_bp)
+app.register_blueprint(api_live_bp)
+app.register_blueprint(api_health_bp)
+app.register_blueprint(api_palettes_bp)
+app.register_blueprint(api_settings_bp)
+\end{lstlisting}
+
+Chaque famille de routes vit dans son propre module : on retrouve donc
+naturellement une route \api{/api/experiment/...} dans
+\file{api\_experiment.py}, et ainsi de suite.
+
+\section{Les singletons de service}
+
+Pour éviter les imports circulaires et garantir une seule instance partagée,
+\file{webapp/services.py} expose :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \code{settings} : les préférences chargées depuis le disque ;
+  \item \code{dmx} : l'unique \code{DMXController} du processus ;
+  \item \code{SEQ\_DIR} / \code{PALETTE\_DIR} : les chemins des dossiers de
+        données.
+\end{itemize}
+
+\begin{note}
+Il n'existe qu'\textbf{un} contrôleur DMX et \textbf{un} lecteur Live pour tout
+le serveur. C'est voulu : un seul fil pilote la ligne DMX.
+\end{note}
+
+\section{Configuration}
+
+\file{webapp/config.py} distingue deux choses :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item les \textbf{constantes} : plan de canaux (\code{Channels}) et cadences
+        de boucle (\code{Timings}) ;
+  \item l'\textbf{état persistant} : la dataclass \code{UserSettings}.
+\end{itemize}
+
+\code{UserSettings} sait se charger, se sauvegarder et mettre à jour des champs.
+Au chargement, seules les clés connues sont conservées, ce qui rend le fichier
+tolérant aux évolutions de schéma. La journalisation écrit à la fois sur la
+console et dans un fichier rotatif.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Cadence} & \textbf{Valeur} & \textbf{Rôle} \\
+    \midrule
+    \code{STEADY\_LOOP} & 0,05 s & Sortie stable, environ 20 Hz. \\
+    \code{RANDOM\_LOOP} & 0,025 s & Environ 40 Hz pour des fondus fluides. \\
+    \code{EFFECT\_LOOP} & 0,025 s & Environ 40 Hz pour les effets. \\
+    \code{IDLE\_LOOP} & 0,10 s & Attente quand aucun mode n'est actif. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Cadences de la boucle DMX (\code{Timings}).}
+\end{table}
+
+\section{Le front-end}
+
+\file{webapp/static/app.js} est un unique script sans dépendance (hormis
+Three.js, fourni en local dans \file{vendor/}). Au chargement, il lit
+\code{document.body.dataset.page} et n'active que le module correspondant
+(\code{bindExperiment}, \code{bindSequence} ou \code{bindLive}). Deux sondages
+réguliers maintiennent l'interface synchronisée avec l'état serveur :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \api{GET /api/experiment/status} toutes les 200 ms (onglet Direct) ;
+  \item \api{GET /api/live/status} toutes les 250 ms (onglet Live).
+\end{itemize}
+
+\chapter{Le contrôleur DMX}
+\label{ch:controleur}
+
+\code{DMXController} (\file{webapp/dmx\_controller.py}) est le cœur temps réel.
+
+\section{Des modes exclusifs, un overlay}
+
+Un seul mode peut être actif à la fois. Le strobe d'overlay, lui, est
+indépendant et se superpose.
+
+\begin{center}
+\begin{tikzpicture}[
+    font=\small,
+    mode/.style={draw=icareblue,fill=icareblue!10,rounded corners,inner sep=7pt},
+    arrow/.style={-Latex,draw=icodecmt},
+  ]
+  \node[mode] (idle) {inactif};
+  \node[mode,right=1.6cm of idle] (steady) {steady};
+  \node[mode,above=0.8cm of steady] (strobe) {strobe};
+  \node[mode,below=0.8cm of steady] (random) {random};
+  \node[mode,below=0.8cm of random] (effect) {effect};
+  \node[mode,below=0.8cm of effect] (audio) {audio};
+  \draw[arrow] (idle) -- (steady);
+  \draw[arrow] (steady) -- (strobe);
+  \draw[arrow] (strobe) -- (random);
+  \draw[arrow] (random) -- (effect);
+  \draw[arrow] (effect) -- (audio);
+  \draw[arrow,dashed,bend left=35] (strobe.north) to node[above,draw=none,fill=none,font=\scriptsize]{switch} (idle.north);
+\end{tikzpicture}
+\end{center}
+\legende{\code{\_switch\_mode()} réinitialise tous les drapeaux puis active le
+mode voulu : les modes sont mutuellement exclusifs.}
+
+\section{Le thread de sortie}
+
+Le thread \code{dmx-out} boucle sans fin et exécute une étape selon le mode
+actif :
+
+\begin{lstlisting}[language=Python,caption={Boucle principale du contrôleur (simplifiée).}]
+while not self._stop_event.is_set():
+    try:
+        if self.enabled:          self._send_with_overlay(); time.sleep(Timings.STEADY_LOOP)
+        elif self.strobe_enabled: self._step_strobe()
+        elif self.random_enabled: self._step_random()
+        elif self.effect_enabled: self._step_effect()
+        elif self.audio_enabled:  time.sleep(Timings.IDLE_LOOP)
+        else:                     time.sleep(Timings.IDLE_LOOP)
+    except Exception:
+        logger.exception("DMX loop error; pausing 0.5 s")
+        time.sleep(0.5)
+\end{lstlisting}
+
+Chaque \emph{frame} passe par \code{\_send\_with\_overlay()}, qui applique
+d'abord l'overlay éventuel puis envoie l'image. Les écritures série sont
+encapsulées dans des \code{try/except} : une erreur transitoire est journalisée
+et la boucle repart après une courte pause, au lieu de tuer le thread.
+
+\section{Points de robustesse}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Toutes les entrées sont \textbf{bornées} : les composantes RGB,
+        l'amplitude, le pan et le tilt sont contraints à 0--255.
+  \item Le canal de base est validé (0--509) et refusé sinon.
+  \item \code{pydmxIcare.send\_data()} ne fait rien si le port est fermé : on
+        peut lancer l'application sans matériel, sans plantage.
+  \item En cas d'erreur d'écriture série, le port est refermé pour permettre une
+        reconnexion propre.
+\end{itemize}
+
+\chapter{Le lecteur de séquence (LivePlayer)}
+\label{ch:liveplayer}
+
+\code{LivePlayer} (\file{webapp/live\_player.py}) parcourt les lignes d'une
+séquence et traduit chaque cellule en couleurs.
+
+\section{Chargement}
+
+\code{load(raw)} normalise la séquence (voir chapitre~\ref{ch:schemas}) puis
+remet l'index et l'état de lecture à zéro. Aucune lecture ne démarre tant que
+\code{start()} n'est pas appelé.
+
+\section{Transport}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{9.4cm}@{}}
+    \toprule
+    \textbf{Méthode} & \textbf{Effet} \\
+    \midrule
+    \code{start(bpm)} & Démarre la lecture (BPM optionnel). \\
+    \code{pause()} & Bascule l'état \emph{pause}. \\
+    \code{stop()} & Arrête et revient au début. \\
+    \code{next()} / \code{prev()} & Avance ou recule d'une ligne. \\
+    \code{toggle\_module(name)} & (Dé)sélectionne un module. \\
+    \code{select\_all()} / \code{unselect\_all()} & Sélection globale. \\
+    \bottomrule
+  \end{tabular}
+  \caption{API de transport du lecteur.}
+\end{table}
+
+\section{Boucle de lecture}
+
+Le thread \code{live-player} applique une ligne puis attend la durée d'un temps :
+\code{60 / BPM} secondes. À la fin de la séquence, la dernière image est
+maintenue avant l'arrêt.
+
+\begin{lstlisting}[language=Python,caption={Cœur de la boucle de lecture.}]
+self.index = min(self.index + 1, total)
+line = self.data["data"].get(str(self.index), {})
+self._apply_step(line.get("function", []))
+time.sleep(60.0 / max(1, self.bpm))
+if self.index >= total:
+    self.playing = False
+\end{lstlisting}
+
+\section{Sélection de modules et visualisation}
+
+Si l'utilisateur a coché des modules, seuls ceux-là sont appliqués ; sinon tous
+le sont. Pour la vue 3D, le lecteur retient la couleur du \emph{premier} module
+ciblé et la pousse au contrôleur DMX, qui est mono-projecteur.
+
+\section{Tap-tempo}
+
+Le tempo mesuré vit dans \file{live\_player.py}. On conserve les horodatages
+récents (fenêtre de 3 secondes), on calcule les intervalles, on en fait la
+moyenne, et on borne le résultat entre 20 et 300 BPM :
+
+\begin{lstlisting}[language=Python,caption={Calcul du tempo à partir des appuis.}]
+intervals = [b - a for a, b in zip(self._taps, self._taps[1:], strict=False)]
+avg = sum(intervals) / len(intervals)
+bpm = int(round(60 / avg))
+bpm = max(20, min(300, bpm))
+\end{lstlisting}
+
+\chapter{Le langage des séquences (DSL)}
+\label{ch:dsl}
+
+Chaque cellule d'une ligne contient une chaîne qui décrit l'action d'\textbf{un}
+projecteur pour ce temps. \file{webapp/dsl.py} la transforme en objet typé.
+
+\section{Grammaire}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    \textbf{Jeton} & \textbf{Signification} \\
+    \midrule
+    \token{""} & Ne rien changer (garder l'état courant). \\
+    \token{|} & Continuer l'effet multi-temps précédent. \\
+    \token{uni\_n\_R\_G\_B} & Couleur fixe pendant \code{n} temps. \\
+    \token{fond\_n\_R1\_G1\_B1\_R2\_G2\_B2} & Fondu linéaire de $c_1$ vers $c_2$. \\
+    \token{str\_n\_R\_G\_B\_freq} & Strobe à \code{freq} Hz pendant \code{n} temps. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Jetons du langage de séquences.}
+  \label{tab:dsl}
+\end{table}
+
+La fréquence du strobe est optionnelle : sans elle, la valeur par défaut est
+60 Hz. Les longueurs \code{n} inférieures à 1 sont ramenées à 1, et toute
+composante hors de 0--255 lève une \code{DSLError}.
+
+\section{Structure du code}
+
+Le module expose des dataclasses gelées :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \code{UniformEffect(length, color)} ;
+  \item \code{FadeEffect(length, color\_from, color\_to)} ;
+  \item \code{StrobeEffect(length, color, freq)} ;
+  \item \code{ContinueEffect()} pour le jeton \token{|}.
+\end{itemize}
+
+La fonction \code{parse(token)} renvoie l'objet correspondant, ou \code{None}
+pour une cellule vide. Trois \emph{encodeurs} (\code{encode\_uniform},
+\code{encode\_fade}, \code{encode\_strobe}) font l'opération inverse, utilisés
+notamment par la migration d'anciens fichiers.
+
+\section{Le jeton de continuation}
+
+Un effet de \code{n} temps s'écrit sur une première ligne, puis \code{n-1} fois
+\token{|}. Le lecteur conserve, pour chaque module, un petit état
+(mode, longueur, pas courant, couleurs, fréquence). À chaque \token{|}, il
+avance d'un pas :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{fondu} : interpolation linéaire
+        $c = c_1 + \frac{\text{pas}}{n-1}\,(c_2 - c_1)$ ;
+  \item \textbf{strobe} : alternance couleur / noir à chaque pas ;
+  \item \textbf{couleur fixe} : la couleur reste identique.
+\end{itemize}
+
+\begin{lstlisting}[caption={Exemple : un fondu de 4 temps du rouge au bleu.},numbers=none]
+fond_4_255_0_0_0_0_255   |   |   |
+\end{lstlisting}
+
+\chapter{Schémas de fichiers et migration}
+\label{ch:schemas}
+
+Deux formats de séquence sont acceptés. \file{webapp/schemas.py} les unifie en
+un seul : le format \emph{moderne}.
+
+\section{Format moderne}
+
+\begin{lstlisting}[language=json,caption={Séquence au format moderne.}]
+{
+  "Header": {
+    "Structure": ["Intro_x4", "Intro_x4", "Couplet1_A_x2"],
+    "Tempo": "60",
+    "Modules": ["ParLED1", "ParLED2", "Strobe1"],
+    "Line": ["1", "2", "3"]
+  },
+  "data": {
+    "1": { "section": "Intro_x4", "function": ["", "uni_4_78_243_86", ""] },
+    "2": { "section": "Intro_x4", "function": ["", "|", "str_3_132_214_107_63"] }
+  }
+}
+\end{lstlisting}
+
+\section{Format historique}
+
+Les anciens fichiers (comme les premières versions de
+\file{Doctor\_doctor.json}) ont une autre forme : une clé \code{headers} avec une
+\code{structure}, et des lignes de quatre nombres
+\code{[durée\_beats, R, G, B]}.
+
+\begin{lstlisting}[language=json,caption={Ancien format (migré automatiquement).},numbers=none]
+{
+  "headers": { "structure": ["intro", "Couplet1", "Refrain1"] },
+  "data": { "intro": [[2, 125, 20, 35], [2, 20, 53, 128]] }
+}
+\end{lstlisting}
+
+\section{Normalisation}
+
+\code{normalize\_sequence(raw)} renvoie toujours le format moderne :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item les modules manquants sur une ligne sont complétés par des cellules
+        vides, ou tronqués s'il y en a trop ;
+  \item les clés de lignes sont converties en chaînes \code{"1"}, \code{"2"},
+        \dots{} et triées numériquement ;
+  \item en format historique, chaque durée est multipliée par deux (une durée de
+        0,5 donne un temps, une durée de 2 en donne quatre) ; la première ligne
+        reçoit un jeton \code{uni\_...}, les suivantes \token{|} ;
+  \item un module factice \code{ParLED1} est utilisé, l'ancien format ne
+        distinguant pas les projecteurs.
+\end{itemize}
+
+Si \code{raw} n'a ni \code{Header} ni \code{headers}, une \code{ValueError} est
+levée : c'est ce qui alimente les réponses d'erreur 422 de l'API.
+
+\begin{note}
+À la sauvegarde, l'API valide en faisant un aller-retour de normalisation avant
+d'écrire le fichier : un contenu invalide est donc refusé au lieu d'être
+persisté.
+\end{note}

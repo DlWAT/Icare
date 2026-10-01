@@ -1,0 +1,75 @@
+% =============================================================================
+%  Icare — manuel complet, rapport et documentation technique
+%  Compilation : latexmk -pdf icare.tex   (ou voir build.ps1)
+% =============================================================================
+\documentclass[11pt,a4paper,oneside]{report}
+
+\input{preamble}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+%  Page de titre
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2.5cm}
+
+  \begin{tikzpicture}
+    \node[
+      rounded corners=12pt,
+      fill=icareblue!12,
+      draw=icareblue,
+      line width=1pt,
+      inner sep=18pt,
+    ] {\fontsize{58}{62}\selectfont\textbf{\textcolor{icaredark}{Icare}}};
+  \end{tikzpicture}
+
+  \vspace{1.2cm}
+  {\Huge\bfseries Manuel et documentation}\\[0.4cm]
+  {\Large\textcolor{icaredark}{Contrôleur DMX web pour groupes amateurs}}\\[0.3cm]
+  {\large Version 0.2.0 --- octobre 2026}
+
+  \vspace{1.8cm}
+  \begin{tikzpicture}
+    \node[draw=icodeln,fill=icodebg,rounded corners,inner sep=12pt,text width=0.78\linewidth,align=left]{
+      \textbf{En une phrase.} \Icare{} transforme un adaptateur USB-DMX
+      (compatible Enttec) en pupitre lumière pilotable depuis le navigateur :
+      couleurs, intensité, effets, séquences et lecture sur scène en BPM.
+    };
+  \end{tikzpicture}
+
+  \vfill
+  {\large Auteur : \Icare{} contributors}\\[0.2cm]
+  {\large Dépôt : \url{https://github.com/DlWAT/Icare}}\\[0.2cm]
+  {\large Licence : MIT}
+\end{titlepage}
+
+% -----------------------------------------------------------------------------
+%  Sommaire
+% -----------------------------------------------------------------------------
+\pagenumbering{roman}
+\setcounter{tocdepth}{2}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% -----------------------------------------------------------------------------
+%  Corps du document
+% -----------------------------------------------------------------------------
+\part{Guide utilisateur}
+\input{part1-guide}
+
+\part{Comprendre \Icare}
+\input{part2-comprendre}
+
+\part{Documentation technique}
+\input{part3-technique}
+
+\part{API, tests et déploiement}
+\input{part4-api}
+
+\appendix
+\input{annexes}
+
+\end{document}

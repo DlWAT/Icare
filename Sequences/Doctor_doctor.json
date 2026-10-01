@@ -1,1 +1,94 @@
-{"headers": {"structure": ["intro", "Couplet1", "Refrain1", "Couplet2", "Refrain2", "Solo"]}, "data": {"intro": [[2, 125, 20, 35], [2, 20, 53, 128]], "Couplet1": [], "Refrain1": [[0.5, 125, 20, 35], [0.5, 20, 53, 128]], "Couplet2": [], "Refrain2": [], "Solo": []}}
+{
+  "Header": {
+    "Structure": [
+      "intro",
+      "intro",
+      "intro",
+      "intro",
+      "intro",
+      "intro",
+      "intro",
+      "intro",
+      "Refrain1",
+      "Refrain1"
+    ],
+    "Tempo": "60",
+    "Modules": [
+      "ParLED1"
+    ],
+    "Line": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10"
+    ]
+  },
+  "data": {
+    "1": {
+      "section": "intro",
+      "function": [
+        "uni_4_125_20_35"
+      ]
+    },
+    "2": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "3": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "4": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "5": {
+      "section": "intro",
+      "function": [
+        "uni_4_20_53_128"
+      ]
+    },
+    "6": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "7": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "8": {
+      "section": "intro",
+      "function": [
+        "|"
+      ]
+    },
+    "9": {
+      "section": "Refrain1",
+      "function": [
+        "uni_1_125_20_35"
+      ]
+    },
+    "10": {
+      "section": "Refrain1",
+      "function": [
+        "uni_1_20_53_128"
+      ]
+    }
+  }
+}

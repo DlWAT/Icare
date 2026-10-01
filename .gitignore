@@ -1,0 +1,62 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+*.manifest
+*.spec.bak
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Testing & coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# --- IDE / Editors ---
+.vscode/*
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Icare runtime ---
+icare.log
+icare.log.*
+icare_settings.json
+config/user_settings.json
+Palettes/
+
+# --- LaTeX (documentation) ---
+*.aux
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.idx
+*.ilg
+*.ind
+*.nav
+*.snm
+*.vrb
+
+# --- PyInstaller artefacts ---
+*.pkg

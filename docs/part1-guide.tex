@@ -1,0 +1,374 @@
+% =============================================================================
+%  PARTIE I — Guide utilisateur
+% =============================================================================
+
+\chapter{Présentation}
+\label{ch:presentation}
+
+\Icare{} est un petit contrôleur de lumière DMX qui se présente comme une
+application web locale. Concrètement : un programme Python démarre un serveur
+\emph{Flask} sur votre machine, et votre navigateur affiche l'interface. Un
+adaptateur USB-DMX branché en USB assure la liaison physique avec les
+projecteurs.
+
+Le projet vise les \textbf{groupes amateurs} qui veulent se passer d'un vrai
+pupitre et d'un éclairagiste dédié : on branche, on ouvre la page, et les
+lumières répondent.
+
+\section{Principes directeurs}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{100 \% local.} Rien ne part sur Internet ; le navigateur ne
+        parle qu'à \code{127.0.0.1:5000}. Pas de compte, pas de cloud.
+  \item \textbf{Une seule interface.} Le navigateur est le pupitre : trois
+        onglets suffisent (\emph{Direct}, \emph{Séquence}, \emph{Live}).
+  \item \textbf{Démarrage rapide.} Une commande pour installer, une commande pour
+        lancer. Une version \code{.exe} autonome existe aussi (voir
+        chapitre~\ref{ch:installation}).
+  \item \textbf{Le spectaculaire accessible.} Effets intégrés (arc-en-ciel, feu,
+        gyrophare, chenillard), mode \emph{audio-réactif} au microphone, et
+        lecture calée au tempo avec le bouton \emph{TAP}.
+\end{itemize}
+
+\section{Vocabulaire}
+
+Avant d'aller plus loin, fixons les mots employés dans ce document et dans
+l'interface.
+
+\begin{description}[leftmargin=1.6em,style=nextline]
+  \item[Univers (DMX)] Ensemble des 512 canaux d'une ligne DMX. Chaque canal
+        porte une valeur de 0 à 255.
+  \item[Module / projecteur (\emph{fixture})] Un appareil branché sur la ligne,
+        qui occupe un ou plusieurs canaux. Dans \Icare{}, les modules portent des
+        noms comme \code{ParLED1} ou \code{Strobe1}.
+  \item[Canal de base] Premier canal d'un projecteur. Si un PAR RGB démarre au
+        canal 9, alors R, G et B occupent respectivement les canaux 9, 10 et 11.
+  \item[Séquence] Une suite d'étapes (\emph{lignes}) décrivant l'état des
+        projecteurs, enregistrée dans un fichier JSON.
+  \item[Section] Étiquette donnée à un groupe de lignes (\code{Intro\_x4},
+        \code{Couplet1}\dots) pour se repérer.
+  \item[Beat / ligne] Une unité de temps de la séquence. Une ligne = un temps
+        musical.
+  \item[BPM] \emph{Beats per minute}. Cadence de lecture de la séquence Live.
+\end{description}
+
+\section{Les trois onglets}
+
+La barre de navigation en haut de page donne accès aux trois espaces de travail,
+résumés dans le tableau~\ref{tab:onglets}.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}p{2.4cm}p{11.5cm}@{}}
+    \toprule
+    \textbf{Onglet} & \textbf{À quoi il sert} \\
+    \midrule
+    \textbf{Direct} & Pilotage immédiat : couleurs, intensité, pan/tilt,
+      blackout, couleurs aléatoires, strobe, effets intégrés, audio-réactif et
+      visualisation 3D. \\
+    \addlinespace
+    \textbf{Séquence} & Édition d'un show temps par temps : table de lignes par
+      module, insertion d'effets \emph{Uniform}, \emph{Fondu} et \emph{Strobe},
+      sauvegarde dans un fichier JSON. \\
+    \addlinespace
+    \textbf{Live} & Lecture d'une séquence sur scène : choix des modules, BPM
+      réglable ou mesuré au \emph{TAP}, transport, barre de progression et vue 3D
+      du faisceau. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Rôle des trois onglets.}
+  \label{tab:onglets}
+\end{table}
+
+En complément, la \textbf{barre supérieure} (ou \emph{topbar}) affiche un
+témoin d'état DMX et un bouton de bascule de thème clair/sombre.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      font=\small,
+      box/.style={draw=icodeln,fill=icodebg,rounded corners,inner sep=8pt,align=center,minimum width=3.4cm},
+      nav/.style={draw=icareblue,fill=icareblue!10,rounded corners,inner sep=6pt,align=center,minimum width=2.2cm},
+      arrow/.style={-Latex,draw=icodecmt},
+    ]
+    \node[box,minimum width=13cm] (top) {Topbar : marque \textbf{Icare} \quad|\quad Accueil \quad Direct \quad Séquence \quad Live \quad|\quad témoin DMX \quad thème};
+    \node[nav,below=1.1cm of top,yshift=0.1cm,xshift=-4.2cm] (d) {Direct};
+    \node[nav,right=0.5cm of d] (s) {Séquence};
+    \node[nav,right=0.5cm of s] (l) {Live};
+    \node[box,below=0.9cm of s,minimum width=13cm] (content) {Contenu de l'onglet actif};
+    \draw[arrow] (d) -- (content);
+    \draw[arrow] (s) -- (content);
+    \draw[arrow] (l) -- (content);
+  \end{tikzpicture}
+  \caption{Organisation générale de l'interface.}
+  \label{fig:ui}
+\end{figure}
+
+\chapter{Installation et démarrage}
+\label{ch:installation}
+
+\section{Prérequis}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Windows (les autres systèmes fonctionnent en développement, mais le
+        paquetage fourni cible Windows).
+  \item Python 3.10 ou plus récent.
+  \item Un adaptateur USB-DMX compatible \emph{Enttec USB Pro} (ou un clone qui
+        implémente le même protocole).
+\end{itemize}
+
+\section{Démarrage depuis les sources}
+
+\begin{lstlisting}[language=bash,caption={Installation et lancement en développement.}]
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python run_webapp.py
+\end{lstlisting}
+
+Le serveur écoute sur \code{http://127.0.0.1:5000}. Ouvrez cette adresse dans
+votre navigateur. En mode \emph{exécutable} empaqueté, le navigateur s'ouvre
+automatiquement au démarrage.
+
+\section{Connecter l'adaptateur DMX}
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Branchez l'adaptateur USB-DMX sur le PC et reliez-le à la ligne DMX des
+        projecteurs (XLR 5 broches ou 3 broches selon votre câblage).
+  \item Dans l'onglet \textbf{Direct}, renseignez le \emph{canal de base} du
+        premier projecteur (9 par défaut), puis cliquez sur
+        \textbf{Connexion DMX}.
+  \item Le témoin en haut à droite passe au vert (\emph{DMX OK}).
+\end{enumerate}
+
+Si aucun port n'est indiqué, \Icare{} choisit automatiquement le premier port
+COM dont la description contient \og USB \fg{}. Vous pouvez forcer un port en
+le saisissant dans le champ \emph{Port} (par exemple \code{COM3}).
+
+\section{Construire un exécutable Windows}
+
+Pour distribuer \Icare{} sur un PC sans Python, utilisez le script fourni :
+
+\begin{lstlisting}[language=bash,caption={Construction de l'exécutable autonome.}]
+.\build_exe.ps1
+\end{lstlisting}
+
+Cela produit \file{dist\textbackslash IcareWeb.exe} (environ 30 Mo). Au
+lancement, l'exécutable démarre le serveur, ouvre le navigateur et crée ses
+fichiers de travail à côté de lui.
+
+\section{Où \Icare{} écrit-il ses fichiers ?}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}llp{7.4cm}@{}}
+    \toprule
+    \textbf{Fichier / dossier} & \textbf{Type} & \textbf{Contenu} \\
+    \midrule
+    \file{Sequences/} & dossiers & Shows en JSON (fournis + créés). \\
+    \file{Palettes/} & dossier & Palettes de couleurs nommées. \\
+    \file{icare\_settings.json} & fichier & Préférences persistantes (thème, port,
+      canal de base, dernière séquence, favoris). \\
+    \file{icare.log} & fichier & Journal rotatif (512 Ko $\times$ 3). \\
+    \bottomrule
+  \end{tabular}
+  \caption{Fichiers produits à l'exécution.}
+  \label{tab:fichiers}
+\end{table}
+
+En développement, ces fichiers apparaissent à la racine du projet. En version
+empaquetée, ils sont écrits à côté de l'exécutable, jamais dans l'archive
+lecture seule.
+
+\chapter{L'onglet Direct}
+\label{ch:direct}
+
+L'onglet \textbf{Direct} est le pupitre manuel : tout ce qu'on y fait est envoyé
+immédiatement au contrôleur DMX.
+
+\section{Connexion}
+
+Le panneau \emph{Connexion} contient :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Canal de base (R)} : premier canal couleur du projecteur
+        (0 à 509).
+  \item \textbf{Port (optionnel)} : nom du port COM ; vide = auto-détection.
+  \item \textbf{Connexion DMX} : ouvre le port série.
+  \item \textbf{Mettre à jour canal de base} : change le canal de base sans
+        rouvrir le port.
+\end{itemize}
+
+\section{Couleur et intensité}
+
+Les curseurs \textbf{Rouge}, \textbf{Vert} et \textbf{Bleu} vont de 0 à 255 ;
+le curseur \textbf{Amplitude} règle la luminosité globale. Le sélecteur de
+couleur (color picker) pilote directement les trois canaux RGB. Un aperçu
+rectangulaire montre la couleur résultante.
+
+Le bouton \textbf{+ Favori} enregistre la couleur courante dans la palette de
+favoris ; un clic sur une pastille la rappelle. La croix \code{x} retire un
+favori. La liste est persistée dans les réglages (32 favoris maximum).
+
+\section{Position et orientation}
+
+Les curseurs \textbf{Pan} et \textbf{Tilt} pilotent les canaux DMX 3 et 5. Les
+quatre réglages suivants (\emph{Angle du faisceau}, \emph{Position X},
+\emph{Position Z}, \emph{Hauteur Y}) ne sont \textbf{pas} envoyés au DMX : ils
+paramètrent uniquement la visualisation 3D, pour se représenter la scène.
+
+\section{Les modes}
+
+\paragraph{Blackout / Stop.} \textbf{Blackout} éteint tout immédiatement
+(couleurs à 0, amplitude à 0). \textbf{Stop} arrête le mode en cours.
+
+\paragraph{Couleurs aléatoires.} Trois paramètres :
+\emph{fréquence} (Hz), \emph{lissage} (0--100 \%) et \emph{luminosité}
+(0--255). Le lissage interpole progressivement vers la couleur cible pour un
+rendu plus doux.
+
+\paragraph{Strobe (overlay).} Un strobe qui \emph{se superpose} au mode courant
+sans l'interrompre. Réglages : fréquence (Hz), rapport cyclique (\%),
+canal DMX optionnel et durée (s). Si un canal est précisé, c'est ce canal qui
+clignote ; sinon l'image entière est alternée entre la couleur courante et le
+noir.
+
+\paragraph{Bibliothèque d'effets.} Quatre effets procéduraux :
+\textbf{Rainbow}, \textbf{Fire}, \textbf{Police} et \textbf{Chase RGB}, avec
+réglage de \emph{vitesse} et de \emph{luminosité}. Voir le
+chapitre~\ref{ch:effets} pour le détail.
+
+\paragraph{Audio-réactif (bêta).} Le microphone du navigateur pilote
+l'intensité au rythme de la musique. On règle la \emph{sensibilité} et la
+\emph{couleur} ; une barre indique le niveau détecté. Voir le
+chapitre~\ref{ch:audio}.
+
+\section{Visualisation 3D}
+
+Le panneau \emph{Visualisation 3D} dessine un projecteur, son faisceau et un
+faisceau spot sur une scène. Couleur, intensité et orientation suivent les
+curseurs (et les modes actifs). Pendant un strobe overlay, l'opacité du faisceau
+clignote au même rythme.
+
+\chapter{L'onglet Séquence}
+\label{ch:sequence-ui}
+
+L'onglet \textbf{Séquence} est l'éditeur de spectacle. Il manipule un fichier
+JSON que l'on pourra lire ensuite dans l'onglet \emph{Live}.
+
+\section{Fichiers}
+
+Le panneau \emph{Fichiers} liste les séquences disponibles. Chaque entrée offre
+un bouton \textbf{Charger} et une croix \code{x} de suppression. Le champ du
+haut permet de nommer puis \textbf{Sauvegarder} le show courant.
+
+\section{Barre d'édition}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{10.5cm}@{}}
+    \toprule
+    \textbf{Champ} & \textbf{Signification} \\
+    \midrule
+    \textbf{Module} & Projecteur ciblé par l'insertion d'effet. \\
+    \textbf{\#Ligne} & Numéro de la ligne (temps) où insérer. \\
+    \textbf{\#Tps} & Nombre de temps que dure l'effet (\code{n}). \\
+    \textbf{Fréquence} & Fréquence du strobe, en Hz. \\
+    Couleur 1 / Couleur 2 & Couleurs de départ et d'arrivée. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Contrôles de la barre d'édition.}
+\end{table}
+
+Trois boutons insèrent des effets :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Uniform} : couleur fixe pendant \code{n} temps.
+  \item \textbf{Fondu} : dégradé linéaire de la couleur 1 vers la couleur 2 sur
+        \code{n} temps.
+  \item \textbf{Strobe} : clignotement à la fréquence donnée pendant \code{n}
+        temps.
+\end{itemize}
+
+Le bouton \textbf{+ Ligne} ajoute une ligne vierge, et \textbf{Effacer cellule}
+vide la cellule ciblée.
+
+\section{Édition directe du tableau}
+
+Le tableau comporte une colonne par module. Les cellules de fonction sont
+éditionnables directement : on peut y taper à la main un jeton du langage
+décrit au chapitre~\ref{ch:dsl}. Le caractère \token{|} prolonge l'effet
+commencé sur la ligne précédente.
+
+\begin{note}
+Une cellule vide signifie \og{}ne rien changer pour ce module à ce temps\fg{}.
+C'est utile pour ne modifier qu'un seul projecteur à la fois.
+\end{note}
+
+\chapter{L'onglet Live}
+\label{ch:live-ui}
+
+L'onglet \textbf{Live} joue une séquence en conditions de spectacle.
+
+\section{Charger et sélectionner}
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Choisissez une séquence dans la liste (\textbf{Charger}).
+  \item Cochez les \textbf{modules} à piloter. Par défaut, tous les modules de la
+        séquence sont pris en compte. Les boutons \emph{Tout sélectionner} et
+        \emph{Tout désélectionner} font le tri.
+\end{enumerate}
+
+\section{Régler le tempo}
+
+Deux méthodes :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Saisir un \textbf{BPM} (20 à 300) dans le champ numérique.
+  \item Cliquer sur \textbf{TAP} en rythme : après deux appuis rapprochés,
+        \Icare{} calcule le tempo moyen et l'applique. \textbf{Reset} efface
+        l'historique des appuis.
+\end{itemize}
+
+\section{Transport}
+
+\textbf{Play}, \textbf{Pause}, \textbf{Stop}, \textbf{Précédent} et
+\textbf{Suivant} contrôlent la lecture. La barre de
+progression, le nom de la section courante et le compteur \code{i / total}
+donnent l'avancement. À la fin, la dernière image est maintenue puis la lecture
+s'arrête.
+
+\section{Vue 3D}
+
+Le faisceau affiché prend la couleur envoyée au DMX en temps réel, ce qui permet
+de vérifier ce qui part sur la ligne même sans regarder les projecteurs.
+
+\chapter{Réglages et persistance}
+\label{ch:reglages}
+
+Peu de choses à régler, mais elles survivent aux redémarrages.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    \textbf{Réglage} & \textbf{Effet} \\
+    \midrule
+    Thème & Clair ou sombre (bouton lune/soleil de la topbar). \\
+    Dernier port COM & Pré-remplit le champ port. \\
+    Canal de base & Restauré au démarrage. \\
+    Dernière séquence & Mémorisée pour rechargement. \\
+    Couleurs favorites & Palette affichée dans l'onglet Direct. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Réglages persistés.}
+\end{table}
+
+Tout est écrit dans \file{icare\_settings.json}. Le journal \file{icare.log}
+enregistre les événements (connexion, erreurs série, etc.) et est automatiquement
+limité en taille.
+
+\begin{avertissement}
+Le fichier de réglages est du JSON : s'il devient illisible (édition manuelle
+ratée), \Icare{} le réinitialise silencieusement au démarrage suivant.
+\end{avertissement}

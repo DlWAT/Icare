@@ -1,0 +1,96 @@
+% =============================================================================
+%  ANNEXES
+% =============================================================================
+
+\chapter{Aide-mémoire du DSL}
+\label{annexe:dsl}
+
+\begin{longtable}{@{}p{4.7cm}p{4.4cm}p{4.9cm}@{}}
+  \toprule
+  \textbf{Jeton} & \textbf{Exemple} & \textbf{Effet} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Jeton} & \textbf{Exemple} & \textbf{Effet} \\
+  \midrule
+  \endhead
+  \token{""} & \token{""} & Ne change rien ce temps-là. \\
+  \token{|} & \token{|} & Continue l'effet multi-temps précédent. \\
+  \token{uni\_n\_R\_G\_B} & \token{uni\_4\_255\_0\_0} &
+    Rouge fixe pendant 4 temps. \\
+  \token{fond\_n\_c1\_c2} & \token{fond\_8\_255\_0\_0\_0\_0\_255} &
+    Fondu rouge $\rightarrow$ bleu sur 8 temps. \\
+  \token{str\_n\_R\_G\_B\_f} & \token{str\_2\_255\_255\_0\_120} &
+    Strobe jaune pendant 2 temps à 120 Hz. \\
+  \token{str\_n\_R\_G\_B} & \token{str\_3\_0\_0\_255} &
+    Strobe bleu, fréquence par défaut (60 Hz). \\
+  \bottomrule
+  \caption{Tous les jetons acceptés.}
+\end{longtable}
+
+\paragraph{Règles.} Une composante de couleur doit être comprise entre 0 et
+255, sans quoi le jeton est rejeté. La longueur \code{n} est au minimum de 1.
+Un préfixe inconnu, un mauvais nombre d'arguments ou un texte non numérique
+produisent une \code{DSLError}, journalisée et ignorée pendant la lecture Live.
+
+\paragraph{Fondu sur plusieurs lignes.} On écrit le jeton complet sur la
+première ligne, puis un \token{|} sur chacune des lignes suivantes : le nombre
+de \token{|} doit valoir \code{n-1} pour couvrir exactement la durée.
+
+\begin{lstlisting}[caption={Fondu de 4 temps (1 ligne d'en-tête + 3 continuations).},numbers=none]
+Ligne 1 :  fond_4_255_0_0_0_0_255
+Ligne 2 :  |
+Ligne 3 :  |
+Ligne 4 :  |
+\end{lstlisting}
+
+\chapter{Dépannage}
+\label{annexe:depannage}
+
+\begin{description}[leftmargin=1.6em,style=nextline]
+  \item[Le témoin DMX reste rouge / «{}DMX HS{}.]
+    Le serveur ne répond pas : vérifiez qu'\Icare{} tourne encore et que
+    l'adresse est bien \code{127.0.0.1:5000}.
+  \item[La connexion échoue avec «{}No USB-DMX adapter found{}.]
+    Aucun port COM ne contient «{}USB{}» dans sa description. Saisissez le port
+    manuellement (par ex. \code{COM3}) dans le champ \emph{Port}. Vérifiez aussi
+    que le pilote de l'adaptateur est installé.
+  \item[Les projecteurs ne réagissent pas.]
+    Contrôlez deux points : le \emph{canal de base} doit correspondre à celui
+    programmé sur le projecteur, et la ligne DMX doit être correctement
+    chaînée (adaptateur, projecteurs, bouchon de fin si nécessaire).
+  \item[L'audio-réactif ne fonctionne pas.]
+    Le navigateur doit avoir l'autorisation microphone. L'API
+    \code{getUserMedia} n'existe que sur les pages servies en
+    \code{localhost} ou en HTTPS : \Icare{} étant local, c'est le cas.
+  \item[Le tempo mesuré est bizarre.]
+    Les appuis trop espacés (plus de 3 secondes d'écart) sont ignorés.
+    Utilisez \textbf{Reset} puis tapez de nouveau, plus régulièrement.
+  \item[J'ai un ancien fichier de séquence.]
+    Rien à faire : le format historique est migré automatiquement à l'ouverture.
+\end{description}
+
+\chapter{Glossaire}
+\label{annexe:glossaire}
+
+\begin{description}[leftmargin=1.6em,style=nextline]
+  \item[Blueprints] Mécanisme Flask qui regroupe des routes par thème
+        (\code{api\_live}, \code{api\_sequence}, \dots).
+  \item[Canal de base] Premier canal occupé par un projecteur.
+  \item[DMX512] Standard de pilotage de lumières : 512 canaux de 0 à 255 sur un
+        bus RS-485 à 250 kbauds.
+  \item[DSL] \emph{Domain Specific Language} : ici, le petit langage de chaînes
+        qui décrit l'action d'un module sur un temps.
+  \item[Enttec USB Pro] Adaptateur USB-DMX très répandu ; son protocole est
+        celui implémenté par \file{pydmxIcare.py}.
+  \item[Fixture] Un projecteur DMX.
+  \item[Frame / image] L'ensemble des 512 valeurs envoyées sur la ligne.
+  \item[HSV] Représentation d'une couleur par teinte, saturation et valeur ;
+        pratique pour générer des arc-en-ciels.
+  \item[Overlay] Effet appliqué par-dessus le mode courant (ici, le strobe).
+  \item[RMS] \emph{Root Mean Square} : mesure d'énergie d'un signal sonore.
+  \item[Séquence] Fichier JSON décrivant un show ligne par ligne.
+  \item[Thread] Fil d'exécution. \Icare{} en utilise deux : la sortie DMX et la
+        lecture Live.
+  \item[Univers] Les 512 canaux d'une ligne DMX.
+\end{description}

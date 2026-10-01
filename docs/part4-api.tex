@@ -1,0 +1,200 @@
+% =============================================================================
+%  PARTIE IV — API, tests et déploiement
+% =============================================================================
+
+\chapter{API REST}
+\label{ch:api}
+
+L'interface et le serveur communiquent exclusivement en JSON.
+
+\section{Conventions}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Succès} : \code{\{"ok": true, ...\}}, code HTTP \code{200}.
+  \item \textbf{Échec} : \code{\{"ok": false, "error": "..."\}}, avec un code
+        explicite :
+        \begin{itemize}
+          \item \code{400} : requête mal formée ou paramètre invalide ;
+          \item \code{404} : fichier introuvable ;
+          \item \code{422} : contenu illisible ou schéma inconnu ;
+          \item \code{500} : erreur d'entrée/sortie côté serveur ;
+          \item \code{503} : connexion DMX impossible.
+        \end{itemize}
+  \item Les noms de fichiers envoyés sont nettoyés et confinés dans
+        \file{Sequences/} ou \file{Palettes/} : aucune traversée de répertoire
+        n'est possible.
+\end{itemize}
+
+\section{Pages HTML}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Méthode} & \textbf{Route} & \textbf{Page} \\
+    \midrule
+    GET & \api{/} & Accueil \\
+    GET & \api{/experiment} & Onglet Direct \\
+    GET & \api{/sequence} & Onglet Séquence \\
+    GET & \api{/live} & Onglet Live \\
+    \bottomrule
+  \end{tabular}
+  \caption{Routes HTML.}
+\end{table}
+
+\section{Onglet Direct}
+
+\begin{longtable}{@{}llp{6.6cm}@{}}
+  \toprule
+  \textbf{Méthode} & \textbf{Route} & \textbf{Rôle} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Méthode} & \textbf{Route} & \textbf{Rôle} \\
+  \midrule
+  \endhead
+  POST & \api{/api/experiment/connect} & Ouvre le port (canal de base + port). \\
+  POST & \api{/api/experiment/base-channel} & Change le canal de base. \\
+  POST & \api{/api/experiment/set-values} & RGB, amplitude, pan, tilt. \\
+  POST & \api{/api/experiment/start} & Démarre la sortie stable. \\
+  POST & \api{/api/experiment/stop} & Arrête le mode courant. \\
+  POST & \api{/api/experiment/blackout} & Éteint tout. \\
+  POST & \api{/api/experiment/strobe} & Strobe plein cadre (freq, shuffle). \\
+  POST & \api{/api/experiment/random} & Configure et démarre l'aléatoire. \\
+  POST & \api{/api/experiment/mode/random-config} & Aléatoire : paramètres seuls. \\
+  POST & \api{/api/experiment/random-start} & Démarre l'aléatoire. \\
+  POST & \api{/api/experiment/random-stop} & Arrête l'aléatoire. \\
+  POST & \api{/api/experiment/mode/strobe-overlay} & Strobe superposé. \\
+  POST & \api{/api/experiment/effect/start} & Lance un effet (rainbow, \dots). \\
+  POST & \api{/api/experiment/effect/stop} & Arrête l'effet. \\
+  POST & \api{/api/experiment/audio/start} & Active le mode audio. \\
+  POST & \api{/api/experiment/audio/stop} & Désactive le mode audio. \\
+  POST & \api{/api/experiment/audio/push} & Pousse un échantillon (niveau, couleur). \\
+  GET & \api{/api/experiment/status} & État complet (polling 200 ms). \\
+  \bottomrule
+  \caption{Points d'entrée de l'onglet Direct.}
+\end{longtable}
+
+Exemple de corps pour \api{set-values} :
+
+\begin{lstlisting}[language=json]
+{ "r": 255, "g": 128, "b": 0, "amp": 200, "pan": 90, "tilt": 45 }
+\end{lstlisting}
+
+\section{Séquence, Live, palettes, réglages}
+
+\begin{longtable}{@{}llp{6.6cm}@{}}
+  \toprule
+  \textbf{Méthode} & \textbf{Route} & \textbf{Rôle} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Méthode} & \textbf{Route} & \textbf{Rôle} \\
+  \midrule
+  \endhead
+  \multicolumn{3}{@{}l}{\textbf{Séquence}}\\
+  GET & \api{/api/sequence/list} & Liste les fichiers JSON. \\
+  GET & \api{/api/sequence/load?name=} & Charge et normalise. \\
+  POST & \api{/api/sequence/save} & Sauve (validation par aller-retour). \\
+  POST & \api{/api/sequence/delete} & Supprime un fichier. \\
+  \addlinespace
+  \multicolumn{3}{@{}l}{\textbf{Live}}\\
+  GET & \api{/api/live/list} & Liste les séquences lisibles. \\
+  POST & \api{/api/live/load} & Charge une séquence dans le lecteur. \\
+  POST & \api{/api/live/play} & Démarre (BPM optionnel). \\
+  POST & \api{/api/live/pause} & Bascule pause. \\
+  POST & \api{/api/live/stop} & Arrête et rembobine. \\
+  POST & \api{/api/live/next} / \api{prev} & Ligne suivante / précédente. \\
+  POST & \api{/api/live/toggle-module} & (Dé)sélectionne un module. \\
+  POST & \api{/api/live/select-all} / \api{unselect-all} & Sélection globale. \\
+  POST & \api{/api/live/tap} & Enregistre un appui de tempo. \\
+  POST & \api{/api/live/tap-reset} & Efface l'historique des appuis. \\
+  POST & \api{/api/live/bpm} & Fixe le BPM (20--300). \\
+  GET & \api{/api/live/status} & Progression, section, BPM, couleur. \\
+  \addlinespace
+  \multicolumn{3}{@{}l}{\textbf{Palettes}}\\
+  GET & \api{/api/palettes/favorites} & Liste des couleurs favorites. \\
+  POST & \api{/api/palettes/favorites/add} & Ajoute un favori. \\
+  POST & \api{/api/palettes/favorites/remove} & Retire un favori. \\
+  GET & \api{/api/palettes/list} & Liste les palettes nommées. \\
+  GET & \api{/api/palettes/load?name=} & Charge une palette. \\
+  POST & \api{/api/palettes/save} & Enregistre une palette. \\
+  POST & \api{/api/palettes/delete} & Supprime une palette. \\
+  \addlinespace
+  \multicolumn{3}{@{}l}{\textbf{Divers}}\\
+  GET & \api{/api/settings} & Réglages courants. \\
+  POST & \api{/api/settings} & Met à jour (thème, port, \dots). \\
+  GET & \api{/api/health} & État du service et du DMX. \\
+  \bottomrule
+  \caption{Points d'entrée restants.}
+\end{longtable}
+
+\chapter{Tests, qualité et déploiement}
+\label{ch:tests}
+
+\section{Suite de tests}
+
+Les tests utilisent \code{pytest} et ne nécessitent \textbf{aucun matériel} :
+le port série est simplement fermé, donc les envois sont sans effet.
+
+\begin{lstlisting}[language=bash,caption={Lancer la suite.}]
+pip install -r requirements-dev.txt
+pytest
+\end{lstlisting}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{9.5cm}c@{}}
+    \toprule
+    \textbf{Fichier} & \textbf{Ce qui est vérifié} & \textbf{Tests} \\
+    \midrule
+    \file{test\_api.py} & Routes HTTP, bornage, sécurité des noms, favoris, réglages. & 10 \\
+    \file{test\_dmx\_controller.py} & Bornage RGB/amp/pan/tilt, canal de base, HSV, effets inconnus. & 7 \\
+    \file{test\_dsl.py} & Analyse, erreurs, bornes, aller-retours des encodeurs. & 16 \\
+    \file{test\_schemas.py} & Passe-plat moderne, remplissage, migration historique. & 4 \\
+    \midrule
+    \multicolumn{2}{r}{\textbf{Total}} & \textbf{37} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Couverture fonctionnelle des tests.}
+\end{table}
+
+\section{Qualité du code}
+
+Le projet est configuré pour \code{ruff}, à la fois pour le lint et pour le
+formatage :
+
+\begin{lstlisting}[language=bash,caption={Vérifications habituelles.}]
+ruff check .          # lint
+ruff format .         # formatage
+pytest                # tests
+\end{lstlisting}
+
+Les règles activées couvrent les erreurs (\code{E}, \code{F}), les avertissements
+(\code{W}), le tri des imports (\code{I}), les pièges fréquents (\code{B}),
+la modernisation des annotations (\code{UP}) et les simplifications
+(\code{C4}). La longueur de ligne cible est de 100 caractères.
+
+\section{Construire l'exécutable}
+
+Le script \file{build\_exe.ps1} et le fichier \file{IcareWeb.spec} emballent
+l'application et ses ressources (gabarits, statiques, séquences) dans un
+exécutable unique.
+
+\begin{lstlisting}[language=bash,caption={Construction.}]
+.\build_exe.ps1     # produit dist\IcareWeb.exe
+\end{lstlisting}
+
+\section{Sources et archive}
+
+Pour ne pas embarquer de fichiers inutiles, \file{.gitignore} exclut les
+caches Python (\code{\_\_pycache\_\_}, \code{*.pyc}), les environnements
+virtuels, les artefacts PyInstaller (\file{build/}, \file{dist/}, \file{*.spec})
+et les fichiers produits à l'exécution (\file{icare.log},
+\file{icare\_settings.json}, \file{Palettes/}).
+
+\begin{note}
+Le dossier \file{Palettes/} est ignoré par Git car il contient des données
+locales, mais il peut être sauvegardé à part si vous voulez conserver vos
+couleurs favorites.
+\end{note}

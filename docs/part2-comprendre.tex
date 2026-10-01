@@ -1,0 +1,304 @@
+% =============================================================================
+%  PARTIE II — Comprendre Icare
+% =============================================================================
+
+\chapter{Le DMX512 en bref}
+\label{ch:dmx}
+
+Cette partie explique \emph{pourquoi} le code fait ce qu'il fait. On y revoit le
+protocole DMX, la trame de l'adaptateur, la circulation des données et les
+algorithmes des effets.
+
+\section{Un univers de 512 canaux}
+
+DMX512 est un protocole de scène très simple. Un \emph{univers} contient
+\textbf{512 canaux}, chacun sur un octet, donc une valeur de \textbf{0 à 255}.
+Onze bits sont envoyés par canal : une impulsion de \emph{start bit}, huit bits de
+données, deux \emph{stop bits}. Le tout circule sur un bus RS-485 à
+\textbf{250 000 bauds}.
+
+Deux propriétés importantes :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Aucun retour.} Le contrôleur parle, les projecteurs écoutent.
+        On ne sait jamais si un projecteur a compris autre chose que ce qu'on
+        voulait.
+  \item \textbf{Image continue.} La même \emph{image} (les 512 valeurs) est
+        renvoyée en boucle. Un projecteur qui cesse de recevoir se met en
+        sécurité (souvent après quelques dixièmes de seconde).
+\end{itemize}
+
+Les valeurs n'ont pas de sens universel : c'est le projecteur qui décide, selon
+son \emph{profil}. Un PAR RGB courant utilise trois canaux (\emph{intensité},
+\emph{rouge}, \emph{vert}, \emph{bleu} sur certains modèles, parfois plus).
+
+\section{Le plan de canaux d'\Icare{}}
+
+Pour rester simple, \Icare{} pilote un unique projecteur RGB selon un plan de
+canaux fixe, hérité de l'ancien prototype. Ces constantes vivent dans
+\file{webapp/config.py}, classe \code{Channels}.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}clp{8cm}@{}}
+    \toprule
+    \textbf{Canal} & \textbf{Constante} & \textbf{Rôle} \\
+    \midrule
+    0 & \code{MASTER} & Toujours à 255 pour «{}\/ouvrir\/»{} la sortie. \\
+    1 & \code{AMPLITUDE} & Luminosité globale (0--255). \\
+    3 & \code{PAN} & Orientation horizontale. \\
+    5 & \code{TILT} & Orientation verticale. \\
+    8 & \code{SHUTTER} & Toujours à 0 (pas d'effet de shutter). \\
+    9 & \code{BASE\_COLOR\_DEFAULT} & R du projecteur, G en 10, B en 11. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Plan de canaux utilisé par le contrôleur.}
+  \label{tab:channels}
+\end{table}
+
+Le \emph{canal de base} est modifiable : les canaux R, G, B sont alors
+\code{base}, \code{base+1} et \code{base+2}. \Icare{} accepte une base de 0 à
+509, afin qu'il reste toujours trois canaux disponibles.
+
+\chapter{L'adaptateur USB-DMX}
+\label{ch:enttec}
+
+Le PC n'a pas de port DMX natif : on passe par un boîtier USB dont l'un des
+plus répandus est l'\emph{Enttec USB Pro}. Le dialogue se fait à 250 000 bauds,
+en 8 bits, sans parité, 2 bits de stop (8N2). \Icare{} occupe la classe
+\code{DMX\_Icare} de \file{pydmxIcare.py}.
+
+\section{La trame Enttec USB Pro}
+
+Chaque envoi est encapsulé dans une petite trame :
+
+\begin{center}
+\begin{tikzpicture}[font=\ttfamily\small,every node/.style={draw,minimum height=0.9cm,minimum width=1.5cm,align=center}]
+  \node[fill=icarenote] (a) {0x7E};
+  \node[right=0pt of a,fill=icareblue!12] (b) {0x06};
+  \node[right=0pt of b,fill=icareblue!12] (c) {LSB};
+  \node[right=0pt of c,fill=icareblue!12] (d) {MSB};
+  \node[right=0pt of d,fill=icarenote] (e) {0x00};
+  \node[right=0pt of e,fill=green!12,minimum width=2.6cm] (f) {512 octets};
+  \node[right=0pt of f,fill=icarenote] (g) {0xE7};
+\end{tikzpicture}
+\end{center}
+\legende{Trame Enttec USB Pro : début, étiquette «{}Output Only Send DMX Packet
+Request{}», longueur de charge utile en petit-boutiste, code de départ DMX,
+données, fin.}
+
+Détail des champs :
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \code{0x7E} : octet de début de trame (\emph{START\_BYTE}).
+  \item \code{0x06} : étiquette «{}envoi seul de paquet DMX{}»
+        (\emph{LABEL\_DMX\_TX}).
+  \item \textbf{LSB, MSB} : longueur de la charge utile = 513 octets
+        (1 code de départ + 512 canaux), soit \code{0x01 0x02}.
+  \item \code{0x00} : code de départ DMX standard.
+  \item \textbf{512 octets} : les valeurs des canaux.
+  \item \code{0xE7} : octet de fin de trame (\emph{END\_BYTE}).
+\end{itemize}
+
+Dans le code, l'en-tête est précalculé une fois pour toutes sous forme de
+tableau NumPy, puis concaténé aux 512 canaux à chaque envoi :
+
+\begin{lstlisting}[language=Python,caption={Construction et envoi d'une trame dans \file{pydmxIcare.py}.}]
+payload_len = NUM_CHANNELS + 1  # 1 start code + 512 channels
+self.start_byte = np.array([
+    START_BYTE, LABEL_DMX_TX,
+    payload_len & 0xFF, (payload_len >> 8) & 0xFF,
+    0x00,  # DMX start code
+], np.uint8)
+...
+frame = np.concatenate((self.start_byte, self.data, self.end_byte)).tobytes()
+self.com.write(frame)
+\end{lstlisting}
+
+\section{Détection du port}
+
+Si aucun port n'est fourni, \Icare{} parcourt les ports série et retient le
+premier dont la description contient \og USB \fg{} :
+
+\begin{lstlisting}[language=Python,caption={Auto-détection du port série.}]
+for port_no, description, _address in serial.tools.list_ports.comports():
+    if "USB" in description:
+        return str(port_no)
+return None
+\end{lstlisting}
+
+En cas d'échec d'écriture, le port est refermé proprement plutôt que de laisser
+la boucle échouer en rafale.
+
+\chapter{La chaîne logicielle, de bout en bout}
+\label{ch:chaine}
+
+Voici comment un mouvement de curseur finit en photons.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      node distance=8mm,
+      font=\small,
+      every node/.style={draw=icodeln,fill=icodebg,rounded corners,align=center,inner sep=6pt},
+      flow/.style={-Latex,draw=icareblue,thick},
+    ]
+    \node (browser) {Navigateur\\(curseur, effets, audio)};
+    \node[right=1.5cm of browser] (flask) {Flask\\API REST};
+    \node[right=1.5cm of flask] (dmx) {\code{DMXController}\\thread de sortie};
+    \node[below=1.1cm of dmx] (serial) {\code{pydmxIcare}\\port série};
+    \node[left=1.5cm of serial] (adapter) {Adaptateur\\USB-DMX};
+    \node[left=1.5cm of adapter] (fixtures) {Projecteurs};
+    \draw[flow] (browser) -- node[above,draw=none,fill=none,font=\scriptsize]{HTTP JSON} (flask);
+    \draw[flow] (flask) -- node[above,draw=none,fill=none,font=\scriptsize]{appel Python} (dmx);
+    \draw[flow] (dmx) -- node[right,draw=none,fill=none,font=\scriptsize]{trame} (serial);
+    \draw[flow] (serial) -- node[above,draw=none,fill=none,font=\scriptsize]{USB} (adapter);
+    \draw[flow] (adapter) -- node[above,draw=none,fill=none,font=\scriptsize]{DMX512} (fixtures);
+    \draw[flow,dashed] (fixtures.south) to[out=-90,in=-90,distance=3.2cm] node[below,draw=none,fill=none,font=\scriptsize]{lumières (aucun retour)} (browser.south);
+  \end{tikzpicture}
+  \caption{Chaîne complète, du navigateur aux projecteurs.}
+  \label{fig:chain}
+\end{figure}
+
+Les étapes :
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Le navigateur (\file{app.js}) envoie par exemple
+        \api{POST /api/experiment/set-values} avec \code{\{r, g, b, amp, pan, tilt\}}.
+  \item La route correspondante (\file{webapp/api\_experiment.py}) appelle
+        \code{dmx.set\_values(...)}.
+  \item \code{DMXController} borne les valeurs (0--255) et, selon le mode actif,
+        écrit la \emph{frame} courante.
+  \item La boucle de fond (thread \code{dmx-out}) rafraîchit la sortie en
+        continu (environ 20 Hz en mode stable).
+  \item \code{pydmxIcare} assemble la trame Enttec et l'écrit sur le port série.
+  \item L'adaptateur traduit cela en signal DMX512 sur la ligne.
+\end{enumerate}
+
+\section{Pourquoi un thread ?}
+
+L'écriture série et les effets sont des tâches \emph{continues} qui ne doivent
+pas bloquer les requêtes HTTP. \Icare{} isole donc la sortie DMX dans un thread
+démon, et le lecteur de séquence dans un second thread. Les routes HTTP ne font
+que modifier l'état partagé (couleurs, paramètres de mode) ; le thread s'occupe
+de le refléter sur le fil.
+
+\section{L'état partagé}
+
+Le contrôleur maintient :
+
+\begin{itemize}[leftmargin=1.6em,itemsep=2pt,topsep=3pt]
+  \item \code{r, g, b, amp, pan, tilt} : les valeurs de sortie ;
+  \item \code{enabled, strobe\_enabled, random\_enabled, effect\_enabled,
+        audio\_enabled} : un seul mode actif à la fois ;
+  \item \code{overlay} : le strobe superposé, indépendant du mode ;
+  \item \code{random\_params, effect\_params, base\_color\_channel}.
+\end{itemize}
+
+\chapter{Les effets procéduraux}
+\label{ch:effets}
+
+Quatre effets sont générés côté serveur, dans la boucle de sortie. Le temps
+écoulé depuis le démarrage, multiplié par la \emph{vitesse}, sert de paramètre
+d'animation.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lp{10.5cm}@{}}
+    \toprule
+    \textbf{Effet} & \textbf{Principe} \\
+    \midrule
+    \code{rainbow} & Teinte qui tourne : $h = (60\,t) \bmod 360$ degrés, saturation
+      et valeur maximales (conversion HSV$\rightarrow$RGB). \\
+    \addlinespace
+    \code{fire} & Orange/rouge vacillant : teinte autour de 18\textdegree, valeur
+      aléatoire entre 0,55 et 1,0 pour l'effet de flamme. \\
+    \addlinespace
+    \code{police} & Alternance rouge / bleu à environ 4 Hz
+      ($\lfloor 4t \rfloor \bmod 2$). \\
+    \addlinespace
+    \code{chase} & Chenillard qui parcourt R, G, B à environ 3 pas par seconde. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Effets procéduraux intégrés.}
+\end{table}
+
+La conversion HSV vers RGB est implémentée à la main, sans dépendance externe :
+
+\begin{lstlisting}[language=Python,caption={Le cœur de \code{\_hsv\_to\_rgb}.}]
+c = v * s
+x = c * (1 - abs(((h / 60) % 2) - 1))
+m = v - c
+if   h <  60: r1, g1, b1 = c, x, 0
+elif h < 120: r1, g1, b1 = x, c, 0
+...
+return int((r1 + m) * 255), int((g1 + m) * 255), int((b1 + m) * 255)
+\end{lstlisting}
+
+\section{Le strobe en superposition}
+
+Le strobe d'overlay est à part : il ne remplace pas le mode courant, il passe
+par-dessus. À chaque image, on évalue une phase
+$\phi = (t \cdot f) \bmod 1$ et on éteint la sortie quand $\phi$ dépasse le
+rapport cyclique :
+
+\begin{equation*}
+\text{sortie} =
+\begin{cases}
+\text{couleur courante} & \text{si } \phi < \text{duty}, \\
+\text{noir (ou 0 sur le canal choisi)} & \text{sinon.}
+\end{cases}
+\end{equation*}
+
+Si un canal DMX est précisé, seul ce canal clignote ; sinon toute l'image
+alterne. L'overlay s'arrête tout seul à la fin de la durée demandée.
+
+\chapter{Le mode audio-réactif}
+\label{ch:audio}
+
+Ce mode transforme le microphone du navigateur en capteur de rythme. Toute
+l'analyse se fait côté client ; le serveur ne reçoit que le résultat.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      node distance=9mm,
+      font=\scriptsize,
+      every node/.style={draw=icodeln,fill=icodebg,rounded corners,align=center,inner sep=5pt},
+      flow/.style={-Latex,draw=icareblue,thick},
+    ]
+    \node (mic) {Micro\\\code{getUserMedia}};
+    \node[right=0.35cm of mic] (an) {\code{Analyser}\\\code{fftSize=1024}};
+    \node[right=0.35cm of an] (rms) {RMS\\\code{getByteTimeDomainData}};
+    \node[right=0.35cm of rms] (lvl) {niveau $\times$ gain\\borne à $[0,1]$};
+    \node[right=0.35cm of lvl] (api) {\api{POST}\\\code{/audio/push}};
+    \node[below=1.2cm of api] (dmx) {\code{amp = niveau $\times$ 255}};
+    \draw[flow] (mic) -- (an);
+    \draw[flow] (an) -- (rms);
+    \draw[flow] (rms) -- (lvl);
+    \draw[flow] (lvl) -- (api);
+    \draw[flow] (api) -- (dmx);
+  \end{tikzpicture}
+  \caption{Chaîne audio-réactive.}
+  \label{fig:audio}
+\end{figure}
+
+\paragraph{Du son au niveau.} On échantillonne la forme d'onde, on recentre les
+octets autour de 128, puis on calcule la valeur quadratique moyenne (RMS) :
+
+\begin{equation*}
+\mathrm{RMS} = \sqrt{\frac{1}{N}\sum_{i=0}^{N-1} \left(\frac{d_i - 128}{128}\right)^2 },
+\qquad
+\text{niveau} = \min\!\big(1,\ \mathrm{RMS} \times \text{gain}\big).
+\end{equation*}
+
+Le curseur \emph{Sensibilité} règle le \code{gain} entre 0,5 et 6.
+
+\paragraph{Fréquence d'envoi.} La boucle d'animation tourne à la fréquence de
+l'écran, mais l'envoi réseau est limité à environ 30 Hz pour ne pas saturer le
+serveur. La couleur choisie accompagne le niveau.
+
+\paragraph{Côté serveur.} \code{audio\_push(niveau, couleur)} met à jour
+l'amplitude à \code{niveau $\times$ 255}, applique éventuellement la couleur, et
+renvoie l'image. Le mode ne génère rien tout seul : sans échantillons, l'état
+ne change pas.

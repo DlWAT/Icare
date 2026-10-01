@@ -1,21 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
-<section>
+<section class="hero">
   <h1>Bienvenue sur Icare Web</h1>
-  <p>Contrôlez vos modules DMX depuis une interface web.</p>
+  <p class="lead">Pilotez vos modules DMX depuis n'importe quel navigateur, en local.</p>
+</section>
+
+<section>
   <div class="cards">
     <a class="card" href="/experiment">
       <h2>Direct</h2>
-      <p>Réglages immédiats (couleurs, pan/tilt, amplitude).</p>
+      <p>Réglages immédiats : couleurs, intensité, pan/tilt, effets, audio-réactif.</p>
     </a>
-    <div class="card disabled">
-      <h2>Séquence (bientôt)</h2>
-      <p>Créez et enregistrez des séquences.</p>
-    </div>
-    <div class="card disabled">
-      <h2>Live (bientôt)</h2>
-      <p>Lecture avec progression et sélection de modules.</p>
-    </div>
+    <a class="card" href="/sequence">
+      <h2>Séquence</h2>
+      <p>Créez et enregistrez des séquences de show beat-par-beat.</p>
+    </a>
+    <a class="card" href="/live">
+      <h2>Live</h2>
+      <p>Lecture sur scène avec tap-tempo, transport et visualisation 3D.</p>
+    </a>
   </div>
+</section>
+
+<section class="muted small" style="margin-top:24px;">
+  <p>Astuce&nbsp;: branchez votre adaptateur DMX-USB avant d'ouvrir l'onglet <em>Direct</em>, puis cliquez sur «&nbsp;Connexion DMX&nbsp;». Le statut s'affiche en haut à droite.</p>
 </section>
 {% endblock %}

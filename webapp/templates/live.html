@@ -11,8 +11,8 @@
     <div class="panel">
       <h3>Modules</h3>
       <div class="row">
-        <button id="btn-live-select-all">Tout sélectionner</button>
-        <button id="btn-live-unselect-all">Tout désélectionner</button>
+        <button id="btn-live-select-all" class="btn-small">Tout sélectionner</button>
+        <button id="btn-live-unselect-all" class="btn-small">Tout désélectionner</button>
       </div>
       <ul id="live-modules" class="list"></ul>
     </div>
@@ -20,30 +20,33 @@
     <div class="panel">
       <h3>Lecture</h3>
       <div class="row">
-        <label>Fréquence
-          <input type="number" id="live-freq" min="1" value="60" />
+        <label>BPM <span class="val" id="val-bpm">60</span>
+          <input type="number" id="live-bpm" min="20" max="300" value="60" />
         </label>
+        <button id="btn-tap" class="btn-primary tap-btn" title="Cliquez en rythme pour caler le BPM">TAP</button>
+        <button id="btn-tap-reset" class="btn-small">Reset</button>
       </div>
-      <div class="row">
-        <button id="btn-live-play">Play</button>
-        <button id="btn-live-pause">Pause</button>
-        <button id="btn-live-stop">Stop</button>
-        <button id="btn-live-prev">Prev</button>
-        <button id="btn-live-next">Next</button>
+      <div class="row transport">
+        <button id="btn-live-play" class="btn-primary">▶ Play</button>
+        <button id="btn-live-pause">⏸ Pause</button>
+        <button id="btn-live-stop">⏹ Stop</button>
+        <button id="btn-live-prev">⏮</button>
+        <button id="btn-live-next">⏭</button>
       </div>
-      <div class="progress">
+      <div class="progress" title="Progression">
         <div id="live-progress-bar" class="progress-bar" style="width:0%"></div>
       </div>
       <div class="row">
-        <span id="live-section">Section: -</span>
+        <span id="live-section" class="muted">Section: -</span>
+        <span class="spacer"></span>
+        <span id="live-counter" class="muted">0 / 0</span>
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" style="grid-column: 1 / -1;">
       <h3>Visualisation 3D</h3>
-      <div id="live3d" style="width:100%; height:360px;"></div>
+      <div id="live3d" style="width:100%; height:420px;"></div>
     </div>
   </div>
 </section>
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 {% endblock %}

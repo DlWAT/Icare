@@ -1,24 +1,39 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="{{ theme or 'dark' }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Icare Web</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
   </head>
-  <body>
+  <body data-page="{{ page or '' }}">
     <header class="topbar">
-      <div class="brand">Icare</div>
+      <div class="brand">
+        <span class="brand-mark"></span>Icare
+      </div>
       <nav>
         <a class="nav-link {{ 'active' if request.path == '/' else '' }}" href="/">Accueil</a>
         <a class="nav-link {{ 'active' if request.path == '/experiment' else '' }}" href="/experiment">Direct</a>
         <a class="nav-link {{ 'active' if request.path == '/sequence' else '' }}" href="/sequence">Séquence</a>
         <a class="nav-link {{ 'active' if request.path == '/live' else '' }}" href="/live">Live</a>
       </nav>
+      <div class="topbar-tools">
+        <span id="dmx-status" class="status-pill" title="Statut DMX">
+          <span class="dot"></span><span class="status-label">DMX</span>
+        </span>
+        <button id="btn-theme-toggle" class="btn-icon" title="Basculer thème" aria-label="Basculer thème">
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
     </header>
+
+    <div id="toast-stack" aria-live="polite"></div>
+
     <main class="container">
       {% block content %}{% endblock %}
     </main>
+
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>
