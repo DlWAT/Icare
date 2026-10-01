@@ -235,9 +235,15 @@ pleins : ils sont calculés par un shader qui reproduit les propriétés d'un
 faisceau réel.
 
 \begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Forme} : les projecteurs à LED ponctuelle (PAR, Q-Spot) émettent
+        un \textbf{cône} ; le \textbf{Wild Wash}, qui est une \emph{barre} de
+        LEDs, émet un \textbf{ventilateur plat} (section elliptique) --- tout
+        comme un vrai wash linéaire.
+  \item \textbf{Contours} : seul le \textbf{Cameo Q-Spot 40}, à l'optique
+        serrée, a un contour \emph{net} ; le PAR et surtout le Wild Wash ont des
+        bords très \emph{doux}.
   \item \textbf{Décroissance radiale} : le faisceau est plus intense sur son axe
-        et s'éteint doucement vers ses bords (pas de bord net) ; un Q-Spot a un
-        c\oe{}ur serré, un Wild Wash est large et homogène.
+        et s'éteint vers ses bords.
   \item \textbf{Décroissance axiale} : l'intensité diminue avec la distance.
   \item \textbf{Pièce au sol} : à l'intersection du faisceau et du sol, une
         \emph{flaque} de lumière elliptique apparaît, dimensionnée par l'angle.
@@ -247,6 +253,10 @@ faisceau réel.
   \item La salle est \textbf{sombre} ; seul ce que la lumière touche est visible.
         Un curseur \emph{Exposition} règle l'ensemble.
 \end{itemize}
+
+Le \textbf{corps} de chaque projecteur reprend sa forme réelle : une longue
+\textbf{barre} avec sa ligne de LEDs pour le Wild Wash, un disque ou une
+lentille pour le PAR et le Q-Spot.
 
 \paragraph{La fumée est éclairée par les lumières.} La fumée n'est pas
 auto-éclairée : chaque particule reçoit la lumière \emph{qui l'atteint
